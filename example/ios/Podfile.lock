@@ -1,11 +1,17 @@
 PODS:
   - Flutter (1.0.0)
+  - YubiKit (4.1.0)
   - yubikit_flutter (0.0.1):
     - Flutter
+    - YubiKit (~> 4.1.0)
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
   - yubikit_flutter (from `.symlinks/plugins/yubikit_flutter/ios`)
+
+SPEC REPOS:
+  trunk:
+    - YubiKit
 
 EXTERNAL SOURCES:
   Flutter:
@@ -15,8 +21,9 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
-  yubikit_flutter: b5d8c8417efa4335c67dbc3ff2c7fbce26fbe0d4
+  YubiKit: e6312b7acb2058ce78f35ef6755489f6c03e562e
+  yubikit_flutter: a1f2a8c4cf630e52f3e752441439d40f98e6ce36
 
-PODFILE CHECKSUM: aafe91acc616949ddb318b77800a7f51bffa2a4c
+PODFILE CHECKSUM: cc1f88378b4bfcf93a6ce00d2c587857c6008d3b
 
 COCOAPODS: 1.11.3
