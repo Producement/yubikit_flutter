@@ -54,7 +54,20 @@ class _MyAppState extends State<MyApp> {
           title: const Text('Plugin example app'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Column(
+            children: [
+              Text('Running onn: $_platformVersion\n'),
+              ElevatedButton(
+                  onPressed: () async => {YubikitFlutter.connect()},
+                  child: const Text("Connect")),
+              ElevatedButton(
+                  onPressed: () async => {YubikitFlutter.disconnect()},
+                  child: const Text("Disconnect")),
+              ElevatedButton(
+                  onPressed: () async => {YubikitFlutter.verifyPin("1234")},
+                  child: const Text("Verify PIN"))
+            ],
+          ),
         ),
       ),
     );
