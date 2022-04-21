@@ -48,4 +48,5 @@ android {
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     implementation 'com.yubico.yubikit:android:2.0.0'
+    implementation 'com.yubico.yubikit:piv:2.0.0'
 }
