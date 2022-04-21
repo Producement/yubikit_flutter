@@ -29,6 +29,52 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
             logger.info("Disconnecting")
             connection = nil
             result(nil)
+        case "pivGenerateKey":
+            guard let connection = connection else {
+                result(FlutterError(code: "connection.not.active", message: "Connection not made!", details: "Connect before calling any methods"))
+                return
+            }
+            connection.connection { connection in
+                self.logger.info("Connection set up: \(connection.debugDescription!)")
+                connection.pivSession { session, error in
+                    self.logger.info("PIV session set up: \(session.debugDescription)")
+                    guard let session = session else {
+                        self.logger.error("Error! Reason: \(error!.localizedDescription)")
+                        result(FlutterError(code: "session.error", message: "\(error!.localizedDescription)", details: ""))
+                        return
+                    }
+                    let slot  = (call.arguments as! Array<Any>)[0] as! NSNumber
+                    let keyType  = (call.arguments as! Array<Any>)[1] as! NSNumber
+                    let pin  = (call.arguments as! Array<Any>)[2] as! String
+                    session.verifyPin(pin) { code, error in
+                        if (error != nil) {
+                            self.logger.info("PIN verification error: \(error.debugDescription)")
+                            result(FlutterError(code: "pin.error", message: "\(error!.localizedDescription)", details: ""))
+                            return
+                        }
+                        self.logger.info("PIN verification successful. Remaining attempts: \(code)")
+                        let message = (call.arguments as! Array<Any>)[3] as! FlutterStandardTypedData
+                        let pivSlot = YKFPIVSlot.init(rawValue: UInt(truncating: slot))!
+                        let pivKeyType = YKFPIVKeyType.init(rawValue: UInt(truncating: keyType))!
+                        self.logger.debug("Signing message: \(message.debugDescription) with key in slot: \(pivSlot.rawValue)")
+                        session.generateKey(in: pivSlot, type: pivKeyType, completion: { key, error in
+                            defer {
+                                self.logger.info("Closing NFC connection")
+                                self.connection?.nfcConnection?.stop()
+                            }
+                            guard let key = key else {
+                                self.logger.error("Key error! Reason: \(error!.localizedDescription)")
+                                result(FlutterError(code: "key.error", message: "\(error!.localizedDescription)", details: ""))
+                                return
+                            }
+                            self.logger.info("Key generated")
+                            let publicKey = SecKeyCopyPublicKey(key)!
+                            result(SecKeyCopyExternalRepresentation(publicKey, nil))
+                        })
+                        
+                    }
+                }
+            }
         case "pivSignWithKey":
             guard let connection = connection else {
                 result(FlutterError(code: "connection.not.active", message: "Connection not made!", details: "Connect before calling any methods"))

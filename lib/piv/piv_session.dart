@@ -12,6 +12,13 @@ class YubikitFlutterPivSession {
 
   YubikitFlutterPivSession(this._channel);
 
+  Future<Uint8List> generateKey(
+      YKFPIVSlot slot, YKFPIVKeyType type, String pin) async {
+    dynamic signature = await _channel
+        .invokeMethod("pivGenerateKey", [slot.value, type.value, pin]);
+    return signature as Uint8List;
+  }
+
   Future<Uint8List> signWithKey(YKFPIVSlot slot, YKFPIVKeyType type,
       YKFPIVKeyAlgorithm algorithm, String pin, Uint8List data) async {
     dynamic signature = await _channel.invokeMethod(
