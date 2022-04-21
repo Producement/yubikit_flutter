@@ -17,7 +17,7 @@ void main() {
     channel.setMockMethodCallHandler(null);
   });
 
-  test('getPlatformVersion', () async {
-    expect(await YubikitFlutter.platformVersion, '42');
+  test('connect', () async {
+    expect(await YubikitFlutter.connect(), '42');
   });
 }

@@ -1,7 +1,11 @@
-import 'package:flutter/material.dart';
-import 'dart:async';
+import 'dart:convert';
+import 'dart:typed_data';
 
-import 'package:flutter/services.dart';
+import 'package:flutter/material.dart';
+import 'package:yubikit_flutter/piv/piv_key_algorithm.dart';
+import 'package:yubikit_flutter/piv/piv_key_type.dart';
+
+import 'package:yubikit_flutter/piv/piv_slot.dart';
 import 'package:yubikit_flutter/yubikit_flutter.dart';
 
 void main() {
@@ -16,33 +20,32 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
+  YubikitFlutter? _yubikitFlutter;
+  Uint8List? signature;
+  Uint8List? publicKey;
 
   @override
   void initState() {
     super.initState();
-    initPlatformState();
+    YubikitFlutter.connect().then((value) => _yubikitFlutter = value);
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
-    try {
-      platformVersion =
-          await YubikitFlutter.platformVersion ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
+  @override
+  void dispose() {
+    _yubikitFlutter?.disconnect();
+    _yubikitFlutter = null;
+    super.dispose();
+  }
 
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
+  void setSignature(Uint8List? newSignature) {
     setState(() {
-      _platformVersion = platformVersion;
+      signature = newSignature;
+    });
+  }
+
+  void setPublicKey(Uint8List? newPublicKey) {
+    setState(() {
+      publicKey = newPublicKey;
     });
   }
 
@@ -51,21 +54,33 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('Yubikit example app'),
         ),
         body: Center(
           child: Column(
             children: [
-              Text('Running onn: $_platformVersion\n'),
               ElevatedButton(
-                  onPressed: () async => {YubikitFlutter.connect()},
-                  child: const Text("Connect")),
+                  onPressed: () async => {
+                        setSignature(await _yubikitFlutter
+                            ?.pivSession()
+                            .signWithKey(
+                                YKFPIVSlot.signature,
+                                YKFPIVKeyType.rsa2048,
+                                YKFPIVKeyAlgorithm
+                                    .rsaSignatureMessagePKCS1v15SHA512,
+                                "122087",
+                                Uint8List.fromList("Hello World".codeUnits)))
+                      },
+                  child: const Text("Sign")),
               ElevatedButton(
-                  onPressed: () async => {YubikitFlutter.disconnect()},
-                  child: const Text("Disconnect")),
-              ElevatedButton(
-                  onPressed: () async => {YubikitFlutter.verifyPin("1234")},
-                  child: const Text("Verify PIN"))
+                  onPressed: () async => {
+                        setPublicKey(await _yubikitFlutter
+                            ?.pivSession()
+                            .getPublicKey(YKFPIVSlot.signature))
+                      },
+                  child: const Text("Get PK")),
+              Text("Signature: " + (base64.encode(signature ?? []))),
+              Text("Public key: " + (base64.encode(publicKey ?? []))),
             ],
           ),
         ),
