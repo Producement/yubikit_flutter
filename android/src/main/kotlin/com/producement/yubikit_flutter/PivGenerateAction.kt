@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.util.Log
 import com.yubico.yubikit.android.ui.YubiKeyPromptActivity
 import com.yubico.yubikit.core.application.CommandState
+import com.yubico.yubikit.core.smartcard.ApduException
 import com.yubico.yubikit.core.smartcard.SmartCardConnection
 import com.yubico.yubikit.core.util.Pair
 import com.yubico.yubikit.piv.*
@@ -21,6 +22,8 @@ class PivGenerateAction : PivAction() {
             keyType: Int,
             pinPolicy: Int,
             touchPolicy: Int,
+            managementKeyType: Byte,
+            managementKey: ByteArray,
         ): Intent {
             Log.d(TAG, "Creating intent")
             val intent = YubiKeyPromptActivity.createIntent(context, PivGenerateAction::class.java)
@@ -29,6 +32,8 @@ class PivGenerateAction : PivAction() {
             intent.putExtra("PIV_SLOT", slot)
             intent.putExtra("PIV_PIN_POLICY", pinPolicy)
             intent.putExtra("PIV_TOUCH_POLICY", touchPolicy)
+            intent.putExtra("PIV_MANAGEMENT_KEY_TYPE", managementKeyType)
+            intent.putExtra("PIV_MANAGEMENT_KEY", managementKey)
             return intent
         }
 
@@ -45,10 +50,14 @@ class PivGenerateAction : PivAction() {
             val pin = extras.getString("PIV_PIN")!!
             val slot = extras.getInt("PIV_SLOT")
             val keyType = extras.getInt("PIV_KEY_TYPE")
+            val managementKeyType = extras.getByte("PIV_MANAGEMENT_KEY_TYPE")
+            val managementKey = extras.getByteArray("PIV_MANAGEMENT_KEY")!!
             val pinPolicy = extras.getInt("PIV_PIN_POLICY")
             val touchPolicy = extras.getInt("PIV_TOUCH_POLICY")
+
             val pivSession = PivSession(connection)
             pivSession.verifyPin(pin.toCharArray())
+            pivSession.authenticate(ManagementKeyType.fromValue(managementKeyType), managementKey)
 
             val publicKey = pivSession.generateKey(
                 Slot.fromValue(slot),

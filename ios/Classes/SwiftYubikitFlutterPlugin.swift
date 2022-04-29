@@ -83,6 +83,8 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                     let pinPolicy  = (call.arguments as! Array<Any>)[2] as! NSNumber
                     let touchPolicy  = (call.arguments as! Array<Any>)[3] as! NSNumber
                     let pin  = (call.arguments as! Array<Any>)[4] as! String
+                    let managementKeyType = (call.arguments as! Array<Any>)[5] as! NSNumber
+                    let managementKey = (call.arguments as! Array<Any>)[6] as! FlutterStandardTypedData
                     session.verifyPin(pin) { code, error in
                         if (error != nil) {
                             self.logger.info("PIN verification error: \(error.debugDescription)")
@@ -90,25 +92,32 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                             return
                         }
                         self.logger.info("PIN verification successful. Remaining attempts: \(code)")
-                        let pivSlot = YKFPIVSlot.init(rawValue: UInt(truncating: slot))!
-                        let pivKeyType = YKFPIVKeyType.init(rawValue: UInt(truncating: keyType))!
-                        let pivPinPolicy = YKFPIVPinPolicy.init(rawValue: UInt(truncating: pinPolicy))!
-                        let pivTouchPolicy = YKFPIVTouchPolicy.init(rawValue: UInt(truncating: touchPolicy))!
-                        session.generateKey(in: pivSlot, type: pivKeyType, pinPolicy: pivPinPolicy, touchPolicy: pivTouchPolicy, completion: { key, error in
-                            defer {
-                                self.logger.info("Closing NFC connection")
-                                conn.nfcConnection?.stop()
-                            }
-                            guard let key = key else {
-                                self.logger.error("Key error! Reason: \(error!.localizedDescription)")
-                                result(FlutterError(code: "key.error", message: "\(error!.localizedDescription)", details: ""))
+                        let pivManagementKey = YKFPIVManagementKeyType.fromValue(UInt8(truncating: managementKeyType))!
+                        session.authenticate(withManagementKey: managementKey.data, type: pivManagementKey) {error in
+                            if (error != nil) {
+                                self.logger.info("Authentication error: \(error.debugDescription)")
+                                result(FlutterError(code: "authentication.error", message: "\(error!.localizedDescription)", details: ""))
                                 return
                             }
-                            self.logger.info("Key generated")
-                            let publicKey = SecKeyCopyPublicKey(key)!
-                            result(SecKeyCopyExternalRepresentation(publicKey, nil))
-                        })
-                        
+                            let pivSlot = YKFPIVSlot.init(rawValue: UInt(truncating: slot))!
+                            let pivKeyType = YKFPIVKeyType.init(rawValue: UInt(truncating: keyType))!
+                            let pivPinPolicy = YKFPIVPinPolicy.init(rawValue: UInt(truncating: pinPolicy))!
+                            let pivTouchPolicy = YKFPIVTouchPolicy.init(rawValue: UInt(truncating: touchPolicy))!
+                            session.generateKey(in: pivSlot, type: pivKeyType, pinPolicy: pivPinPolicy, touchPolicy: pivTouchPolicy, completion: { key, error in
+                                defer {
+                                    self.logger.info("Closing NFC connection")
+                                    conn.nfcConnection?.stop()
+                                }
+                                guard let key = key else {
+                                    self.logger.error("Key error! Reason: \(error!.localizedDescription)")
+                                    result(FlutterError(code: "key.error", message: "\(error!.localizedDescription)", details: ""))
+                                    return
+                                }
+                                self.logger.info("Key generated")
+                                let publicKey = SecKeyCopyPublicKey(key)!
+                                result(SecKeyCopyExternalRepresentation(publicKey, nil))
+                            })
+                        }
                     }
                 }
             }

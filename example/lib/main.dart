@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:yubikit_flutter/piv/piv_key_algorithm.dart';
 import 'package:yubikit_flutter/piv/piv_key_type.dart';
+import 'package:yubikit_flutter/piv/piv_management_key_type.dart';
 import 'package:yubikit_flutter/piv/piv_pin_policy.dart';
 
 import 'package:yubikit_flutter/piv/piv_slot.dart';
@@ -79,23 +80,24 @@ class _MyAppState extends State<MyApp> {
                                 YKFPIVKeyType.rsa2048,
                                 YKFPIVPinPolicy.always,
                                 YKFPIVTouchPolicy.always,
+                                YKFPIVManagementKeyType.aes128,
+                                Uint8List.fromList("".codeUnits),
                                 "12345678"))
                       },
                   child: const Text("Generate key")),
               ElevatedButton(
                   onPressed: () async {
                     Uint8List? publicKey = await YubikitFlutter.pivSession()
-                        .generateKey(
+                        .decryptWithKey(
                             YKFPIVSlot.signature,
-                            YKFPIVKeyType.rsa2048,
-                            YKFPIVPinPolicy.always,
-                            YKFPIVTouchPolicy.always,
-                            "12345678");
+                            YKFPIVKeyAlgorithm.rsaEncryptionPKCS1,
+                            "12345678",
+                            Uint8List.fromList("".codeUnits));
                     setState(() {
                       this.publicKey = publicKey;
                     });
                   },
-                  child: const Text("Encrypt data")),
+                  child: const Text("Decrypt data")),
               Text("Signature: " + (base64.encode(signature ?? []))),
               Text("Public key: " + (base64.encode(publicKey ?? []))),
               Text("Data: " + data),

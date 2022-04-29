@@ -73,8 +73,19 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 val pinPolicy = arguments[2] as Int
                 val touchPolicy = arguments[3] as Int
                 val pin = arguments[4] as String
+                val managementKeyType = arguments[5] as Byte
+                val managementKey = arguments[6] as ByteArray
                 val intent =
-                    pivGenerateIntent(context, pin, slot, keyType, pinPolicy, touchPolicy)
+                    pivGenerateIntent(
+                        context,
+                        pin,
+                        slot,
+                        keyType,
+                        pinPolicy,
+                        touchPolicy,
+                        managementKeyType,
+                        managementKey
+                    )
                 observeResponse(result)
                 activity.startActivityForResult(intent, GENERATE_REQUEST)
             }

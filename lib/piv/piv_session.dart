@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:yubikit_flutter/piv/piv_key_algorithm.dart';
 import 'package:yubikit_flutter/piv/piv_key_type.dart';
+import 'package:yubikit_flutter/piv/piv_management_key_type.dart';
 import 'package:yubikit_flutter/piv/piv_pin_policy.dart';
 import 'package:yubikit_flutter/piv/piv_touch_policy.dart';
 
@@ -19,9 +20,18 @@ class YubikitFlutterPivSession {
       YKFPIVKeyType type,
       YKFPIVPinPolicy pinPolicy,
       YKFPIVTouchPolicy touchPolicy,
+      YKFPIVManagementKeyType managementKeyType,
+      Uint8List managementKey,
       String pin) async {
-    dynamic publicKey = await _channel.invokeMethod("pivGenerateKey",
-        [slot.value, type.value, pinPolicy.value, touchPolicy.value, pin]);
+    dynamic publicKey = await _channel.invokeMethod("pivGenerateKey", [
+      slot.value,
+      type.value,
+      pinPolicy.value,
+      touchPolicy.value,
+      pin,
+      managementKeyType,
+      managementKey
+    ]);
     return publicKey as Uint8List;
   }
 
@@ -37,17 +47,5 @@ class YubikitFlutterPivSession {
     dynamic decryptedData = await _channel.invokeMethod(
         "pivDecryptWithKey", [slot.value, algorithm.value, pin, encryptedData]);
     return decryptedData as Uint8List;
-  }
-
-  Future<void> setPin(String pin, String oldPin) async {
-    await _channel.invokeMethod("pivSetPin", [pin, oldPin]);
-  }
-
-  Future<void> setPuk(String puk, String oldPuk) async {
-    await _channel.invokeMethod("pivSetPuk", [puk, oldPuk]);
-  }
-
-  Future<void> reset() async {
-    await _channel.invokeMethod("pivReset");
   }
 }
