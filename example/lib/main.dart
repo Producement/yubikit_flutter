@@ -22,7 +22,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  YubikitFlutter? _yubikitFlutter;
   Uint8List? signature;
   Uint8List? publicKey;
   late String data;
@@ -31,13 +30,10 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     data = "Hello World";
-    YubikitFlutter.connect().then((value) => _yubikitFlutter = value);
   }
 
   @override
   void dispose() {
-    _yubikitFlutter?.disconnect();
-    _yubikitFlutter = null;
     super.dispose();
   }
 
@@ -65,8 +61,7 @@ class _MyAppState extends State<MyApp> {
             children: [
               ElevatedButton(
                   onPressed: () async => {
-                        setSignature(await _yubikitFlutter
-                            ?.pivSession()
+                        setSignature(await YubikitFlutter.pivSession()
                             .signWithKey(
                                 YKFPIVSlot.signature,
                                 YKFPIVKeyType.rsa2048,
@@ -78,8 +73,7 @@ class _MyAppState extends State<MyApp> {
                   child: const Text("Sign")),
               ElevatedButton(
                   onPressed: () async => {
-                        setPublicKey(await _yubikitFlutter
-                            ?.pivSession()
+                        setPublicKey(await YubikitFlutter.pivSession()
                             .generateKey(
                                 YKFPIVSlot.signature,
                                 YKFPIVKeyType.rsa2048,
@@ -90,8 +84,7 @@ class _MyAppState extends State<MyApp> {
                   child: const Text("Generate key")),
               ElevatedButton(
                   onPressed: () async {
-                    Uint8List? publicKey = await _yubikitFlutter
-                        ?.pivSession()
+                    Uint8List? publicKey = await YubikitFlutter.pivSession()
                         .generateKey(
                             YKFPIVSlot.signature,
                             YKFPIVKeyType.rsa2048,
@@ -103,16 +96,6 @@ class _MyAppState extends State<MyApp> {
                     });
                   },
                   child: const Text("Encrypt data")),
-              ElevatedButton(
-                  onPressed: () async {
-                    await _yubikitFlutter?.pivSession().reset();
-                    setState(() {
-                      publicKey = null;
-                      signature = null;
-                      data = "Hello World";
-                    });
-                  },
-                  child: const Text("Reset")),
               Text("Signature: " + (base64.encode(signature ?? []))),
               Text("Public key: " + (base64.encode(publicKey ?? []))),
               Text("Data: " + data),

@@ -12,57 +12,12 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
     }
     
     let logger = Logger()
-    var connection: YubiKeyConnection?
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        let conn = YubiKeyConnection()
         switch(call.method) {
-        case "connect":
-            logger.info("Setting up Yubikey connection")
-            if(connection != nil) {
-                logger.info("Connection already made!")
-                result(FlutterError(code: "connection.active", message: "Connection already made!", details: "Only one connection allowed at a time"))
-                return
-            }
-            connection = YubiKeyConnection();
-            result(nil)
-        case "disconnect":
-            logger.info("Disconnecting")
-            connection = nil
-            result(nil)
-        case "pivReset":
-            guard let connection = connection else {
-                result(FlutterError(code: "connection.not.active", message: "Connection not made!", details: "Connect before calling any methods"))
-                return
-            }
-            connection.connection { connection in
-                self.logger.info("Connection set up: \(connection.debugDescription!)")
-                connection.pivSession { session, error in
-                    self.logger.info("PIV session set up: \(session.debugDescription)")
-                    guard let session = session else {
-                        self.logger.error("Error! Reason: \(error!.localizedDescription)")
-                        result(FlutterError(code: "session.error", message: "\(error!.localizedDescription)", details: ""))
-                        return
-                    }
-                    session.reset(completion: { error in
-                        defer {
-                            self.logger.info("Closing NFC connection")
-                            self.connection?.nfcConnection?.stop()
-                        }
-                        if (error != nil) {
-                            self.logger.info("Change PIN error: \(error.debugDescription)")
-                            result(FlutterError(code: "pin.error", message: "\(error!.localizedDescription)", details: ""))
-                            return
-                        }
-                        result(nil)
-                    })
-                }
-            }
         case "pivSetPin":
-            guard let connection = connection else {
-                result(FlutterError(code: "connection.not.active", message: "Connection not made!", details: "Connect before calling any methods"))
-                return
-            }
-            connection.connection { connection in
+            conn.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
@@ -76,7 +31,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                     session.setPin(pin, oldPin:oldPin, completion: { error in
                         defer {
                             self.logger.info("Closing NFC connection")
-                            self.connection?.nfcConnection?.stop()
+                            conn.nfcConnection?.stop()
                         }
                         if (error != nil) {
                             self.logger.info("Change PIN error: \(error.debugDescription)")
@@ -88,11 +43,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                 }
             }
         case "pivSetPuk":
-            guard let connection = connection else {
-                result(FlutterError(code: "connection.not.active", message: "Connection not made!", details: "Connect before calling any methods"))
-                return
-            }
-            connection.connection { connection in
+            conn.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
@@ -106,7 +57,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                     session.setPuk(puk, oldPuk:oldPuk, completion: { error in
                         defer {
                             self.logger.info("Closing NFC connection")
-                            self.connection?.nfcConnection?.stop()
+                            conn.nfcConnection?.stop()
                         }
                         if (error != nil) {
                             self.logger.info("Change PUK error: \(error.debugDescription)")
@@ -118,11 +69,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                 }
             }
         case "pivGenerateKey":
-            guard let connection = connection else {
-                result(FlutterError(code: "connection.not.active", message: "Connection not made!", details: "Connect before calling any methods"))
-                return
-            }
-            connection.connection { connection in
+            conn.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
@@ -150,7 +97,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                         session.generateKey(in: pivSlot, type: pivKeyType, pinPolicy: pivPinPolicy, touchPolicy: pivTouchPolicy, completion: { key, error in
                             defer {
                                 self.logger.info("Closing NFC connection")
-                                self.connection?.nfcConnection?.stop()
+                                conn.nfcConnection?.stop()
                             }
                             guard let key = key else {
                                 self.logger.error("Key error! Reason: \(error!.localizedDescription)")
@@ -166,11 +113,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                 }
             }
         case "pivSignWithKey":
-            guard let connection = connection else {
-                result(FlutterError(code: "connection.not.active", message: "Connection not made!", details: "Connect before calling any methods"))
-                return
-            }
-            connection.connection { connection in
+            conn.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
@@ -208,7 +151,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                         session.signWithKey(in: pivSlot, type: pivKeyType, algorithm: pivAlgorithm, message: message.data) { signature, error in
                             defer {
                                 self.logger.info("Closing NFC connection")
-                                self.connection?.nfcConnection?.stop()
+                                conn.nfcConnection?.stop()
                             }
                             guard let signature = signature else {
                                 self.logger.error("Failed to sign message: \(error!.localizedDescription)")
@@ -223,11 +166,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                 }
             }
         case "pivDecryptWithKey":
-            guard let connection = connection else {
-                result(FlutterError(code: "connection.not.active", message: "Connection not made!", details: "Connect before calling any methods"))
-                return
-            }
-            connection.connection { connection in
+            conn.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
@@ -261,7 +200,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                         }
                         session.decryptWithKey(in: pivSlot, algorithm: pivAlgorithm, encrypted: message.data) { data, error in
                             defer {
-                                self.connection?.nfcConnection?.stop()
+                                conn.nfcConnection?.stop()
                             }
                             guard let data = data else {
                                 self.logger.error("Failed to decrypt message: \(error!.localizedDescription)")

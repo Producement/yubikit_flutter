@@ -1,17 +1,13 @@
 package com.producement.yubikit_flutter
 
-import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import android.util.Log
 import androidx.annotation.NonNull
-import com.yubico.yubikit.android.YubiKitManager
-import com.yubico.yubikit.android.transport.nfc.NfcConfiguration
-import com.yubico.yubikit.android.transport.nfc.NfcNotAvailable
-import com.yubico.yubikit.android.transport.usb.UsbConfiguration
-import com.yubico.yubikit.core.Logger
-import com.yubico.yubikit.core.YubiKeyDevice
-import com.yubico.yubikit.core.smartcard.SmartCardConnection
-import com.yubico.yubikit.piv.KeyType
-import com.yubico.yubikit.piv.PivSession
-import com.yubico.yubikit.piv.Slot
+import androidx.lifecycle.MutableLiveData
+import com.producement.yubikit_flutter.PivDecryptAction.Companion.pivDecryptIntent
+import com.producement.yubikit_flutter.PivSignAction.Companion.pivSignIntent
+import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -19,115 +15,54 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import java.security.Signature
-import javax.crypto.Cipher
+import io.flutter.plugin.common.PluginRegistry
+import java.lang.Exception
+import java.lang.RuntimeException
 
-
-/** YubikitFlutterPlugin */
-class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
+    PluginRegistry.ActivityResultListener {
     private lateinit var channel: MethodChannel
-    private lateinit var yubikit: YubiKitManager
-    private lateinit var activity: Activity
-    private var device: YubiKeyDevice? = null
-    private val nfcConfiguration = NfcConfiguration()
+    private lateinit var context: Context
+    private lateinit var activity: FlutterActivity
+    private val responseData = MutableLiveData<kotlin.Result<*>>()
+
+    companion object {
+        private const val TAG = "YubikitFlutter"
+        private const val SIGNATURE_REQUEST = 1
+        private const val DECRYPT_REQUEST = 2
+    }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
+        Log.d(TAG, "Attached to engine")
+        context = flutterPluginBinding.applicationContext
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "yubikit_flutter")
         channel.setMethodCallHandler(this)
     }
 
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
-        val yubikeyDevice = device
-        if (yubikeyDevice == null) {
-            result.error("no.device", "Device not found!", "")
-            return
-        }
+        Log.d(TAG, "Method ${call.method} called")
         when (call.method) {
             "pivSignWithKey" -> {
-                getSession(
-                    yubikeyDevice,
-                    { error ->
-                        result.error(
-                            "session.error",
-                            error.localizedMessage,
-                            ""
-                        )
-                    }) { pivSession ->
-                    val arguments = call.arguments<Array<Any>>()
-                    val slot = arguments[0] as Int
-                    val keyType = arguments[1] as Int
-                    val algorithm = arguments[2] as String
-                    val pin = arguments[3] as String
-                    val message = arguments[4] as ByteArray
-                    pivSession.verifyPin(pin.toCharArray())
-                    val signatureAlgorithm = getSignatureAlgorithm(algorithm)
-                    if (signatureAlgorithm == null) {
-                        result.error(
-                            "unsupported.algorithm.error",
-                            "Unsupported algorithm: $algorithm",
-                            ""
-                        )
-                        return@getSession
-                    }
-
-                    val signature = pivSession.sign(
-                        Slot.fromValue(slot),
-                        KeyType.fromValue(keyType),
-                        message,
-                        signatureAlgorithm,
-                    )
-                    result.success(signature)
-                }
+                val arguments = call.arguments<List<Any>>()
+                val slot = arguments[0] as Int
+                val keyType = arguments[1] as Int
+                val algorithm = arguments[2] as String
+                val pin = arguments[3] as String
+                val message = arguments[4] as ByteArray
+                val intent =
+                    pivSignIntent(context, pin, algorithm, slot, keyType, message)
+                observeResponse(result)
+                activity.startActivityForResult(intent, SIGNATURE_REQUEST)
             }
             "pivDecryptWithKey" -> {
-                getSession(
-                    yubikeyDevice,
-                    { error ->
-                        result.error(
-                            "session.error",
-                            error.localizedMessage,
-                            ""
-                        )
-                    }) { pivSession ->
-                    val arguments = call.arguments<Array<Any>>()
-                    val slot = arguments[0] as Int
-                    val algorithm = arguments[1] as String
-                    val pin = arguments[2] as String
-                    val message = arguments[3] as ByteArray
-                    pivSession.verifyPin(pin.toCharArray())
-                    val encryptionAlgorithm = getEncryptionAlgorithm(algorithm)
-                    if (encryptionAlgorithm == null) {
-                        result.error(
-                            "unsupported.algorithm.error",
-                            "Unsupported algorithm: $algorithm",
-                            ""
-                        )
-                        return@getSession
-                    }
-
-                    val decryptedData = pivSession.decrypt(
-                        Slot.fromValue(slot),
-                        message,
-                        encryptionAlgorithm,
-                    )
-                    result.success(decryptedData)
-                }
-            }
-            "pivGetPublicKey" -> {
-                getSession(
-                    yubikeyDevice,
-                    { error ->
-                        result.error(
-                            "session.error",
-                            error.localizedMessage,
-                            ""
-                        )
-                    }) { pivSession ->
-                    val arguments = call.arguments<Array<Any>>()
-                    val slot = arguments[0] as Int
-                    val certificate = pivSession.getCertificate(Slot.fromValue(slot))
-                    result.success(certificate.publicKey.encoded)
-                }
+                val arguments = call.arguments<Array<Any>>()
+                val slot = arguments[0] as Int
+                val algorithm = arguments[1] as String
+                val pin = arguments[2] as String
+                val message = arguments[3] as ByteArray
+                val intent = pivDecryptIntent(context, pin, algorithm, slot, message)
+                observeResponse(result)
+                activity.startActivityForResult(intent, DECRYPT_REQUEST)
             }
             else -> {
                 result.notImplemented()
@@ -135,80 +70,72 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
         }
     }
 
-    private fun getSignatureAlgorithm(algorithm: String): Signature? {
-        return when (algorithm) {
-            "rsaSignatureMessagePKCS1v15SHA512" -> Signature.getInstance("SHA512withRSA")
-            "ecdsaSignatureMessageX962SHA256" -> Signature.getInstance("SHA256withECDSA")
-            else -> null
+    private fun observeResponse(result: Result) {
+        responseData.observe(activity) { newValue ->
+            Log.d(TAG, "Observed value $newValue")
+            responseData.removeObservers(activity)
+            newValue.onFailure { t -> result.error("yubikit.error", t.message, "") }
+            newValue.onSuccess { t -> result.success(t) }
         }
     }
 
-    private fun getEncryptionAlgorithm(algorithm: String): Cipher? {
-        return when (algorithm) {
-            "rsaEncryptionPKCS1" -> Cipher.getInstance("RSA/NONE/PKCS1Padding")
-            "rsaEncryptionOAEPSHA224" -> Cipher.getInstance("RSA/NONE/OAEPWithSHA-224AndMGF1Padding")
-            else -> null
-        }
-    }
-
-    private fun getSession(
-        device: YubiKeyDevice,
-        onError: (Throwable) -> Unit,
-        callback: (PivSession) -> Unit
-    ) {
-        device.requestConnection(SmartCardConnection::class.java) {
-            try {
-                callback(PivSession(it.value))
-            } catch (e: Throwable) {
-                onError(e)
-            }
-        }
-    }
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
+        Log.d(TAG, "Detached from engine")
         channel.setMethodCallHandler(null)
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        activity = binding.activity
-        yubikit = YubiKitManager(binding.activity)
-        Logger.d("Enable listening")
-        yubikit.startUsbDiscovery(UsbConfiguration()) { device ->
-            Logger.d("USB device attached $device")
-            this.device = device
-            device.setOnClosed {
-                Logger.d("Device removed $device")
-                this.device = null
-            }
-        }
-        try {
-            yubikit.startNfcDiscovery(nfcConfiguration, binding.activity) { device ->
-                Logger.d("NFC Session started $device")
-                this.device = device
-            }
-        } catch (e: NfcNotAvailable) {
-            Logger.e("Error starting NFC listening", e)
-        }
+        Log.d(TAG, "Attached to activity")
+        activity = binding.activity as FlutterActivity
+        binding.addActivityResultListener(this)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
-        yubikit.stopNfcDiscovery(activity)
-
+        Log.d(TAG, "Detached from activity for config changes")
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
-        try {
-            yubikit.startNfcDiscovery(nfcConfiguration, binding.activity) { device ->
-                Logger.d("NFC Session started $device")
-                this.device = device
-            }
-        } catch (e: NfcNotAvailable) {
-            Logger.e("Error starting NFC listening", e)
-        }
+        Log.d(TAG, "Reattached to activity")
+        activity = binding.activity as FlutterActivity
+        binding.addActivityResultListener(this)
     }
 
     override fun onDetachedFromActivity() {
-        yubikit.stopUsbDiscovery()
-        yubikit.stopNfcDiscovery(activity)
+        Log.d(TAG, "Detached from activity")
     }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent): Boolean {
+        Log.d(TAG, "Hey this is the data $data")
+        if (data.hasExtra("PIV_ERROR")) {
+            responseData.postValue(
+                kotlin.Result.failure<Exception>(
+                    Exception(
+                        data.getStringExtra(
+                            "PIV_ERROR"
+                        )
+                    )
+                )
+            )
+        } else {
+            when (requestCode) {
+                SIGNATURE_REQUEST -> responseData.postValue(
+                    kotlin.Result.success(
+                        PivSignAction.getPivSignature(
+                            data
+                        )
+                    )
+                )
+                DECRYPT_REQUEST -> responseData.postValue(
+                    kotlin.Result.success(
+                        PivDecryptAction.getPivDecrypted(
+                            data
+                        )
+                    )
+                )
+            }
+        }
+        return true
+    }
+
 }
