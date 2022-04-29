@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.annotation.NonNull
 import androidx.lifecycle.MutableLiveData
 import com.producement.yubikit_flutter.PivDecryptAction.Companion.pivDecryptIntent
+import com.producement.yubikit_flutter.PivGenerateAction.Companion.pivGenerateIntent
 import com.producement.yubikit_flutter.PivSignAction.Companion.pivSignIntent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -30,6 +31,7 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         private const val TAG = "YubikitFlutter"
         private const val SIGNATURE_REQUEST = 1
         private const val DECRYPT_REQUEST = 2
+        private const val GENERATE_REQUEST = 3
     }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -55,7 +57,7 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 activity.startActivityForResult(intent, SIGNATURE_REQUEST)
             }
             "pivDecryptWithKey" -> {
-                val arguments = call.arguments<Array<Any>>()
+                val arguments = call.arguments<List<Any>>()
                 val slot = arguments[0] as Int
                 val algorithm = arguments[1] as String
                 val pin = arguments[2] as String
@@ -63,6 +65,18 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 val intent = pivDecryptIntent(context, pin, algorithm, slot, message)
                 observeResponse(result)
                 activity.startActivityForResult(intent, DECRYPT_REQUEST)
+            }
+            "pivGenerateKey" -> {
+                val arguments = call.arguments<List<Any>>()
+                val slot = arguments[0] as Int
+                val keyType = arguments[1] as Int
+                val pinPolicy = arguments[2] as Int
+                val touchPolicy = arguments[3] as Int
+                val pin = arguments[4] as String
+                val intent =
+                    pivGenerateIntent(context, pin, slot, keyType, pinPolicy, touchPolicy)
+                observeResponse(result)
+                activity.startActivityForResult(intent, GENERATE_REQUEST)
             }
             else -> {
                 result.notImplemented()
@@ -132,6 +146,9 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                             data
                         )
                     )
+                )
+                GENERATE_REQUEST -> responseData.postValue(
+                    kotlin.Result.success(PivGenerateAction.getPivGenerate(data))
                 )
             }
         }
