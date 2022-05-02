@@ -5,15 +5,13 @@ import android.content.Intent
 import android.util.Log
 import androidx.annotation.NonNull
 import androidx.lifecycle.MutableLiveData
-import com.producement.yubikit_flutter.piv.PivDecryptAction.Companion.pivDecryptIntent
-import com.producement.yubikit_flutter.piv.PivGenerateAction.Companion.pivGenerateIntent
-import com.producement.yubikit_flutter.piv.PivSignAction.Companion.pivSignIntent
 import com.producement.yubikit_flutter.piv.PivDecryptAction
+import com.producement.yubikit_flutter.piv.PivDecryptAction.Companion.pivDecryptIntent
 import com.producement.yubikit_flutter.piv.PivGenerateAction
+import com.producement.yubikit_flutter.piv.PivGenerateAction.Companion.pivGenerateIntent
 import com.producement.yubikit_flutter.piv.PivResetAction
 import com.producement.yubikit_flutter.piv.PivSignAction
-import dagger.hilt.android.AndroidEntryPoint
-import dagger.hilt.android.HiltAndroidApp
+import com.producement.yubikit_flutter.piv.PivSignAction.Companion.pivSignIntent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -23,8 +21,10 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry
-import java.lang.Exception
-import javax.inject.Inject
+import java.security.KeyFactory
+import java.security.spec.X509EncodedKeySpec
+import javax.crypto.Cipher
+
 
 class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     PluginRegistry.ActivityResultListener {
@@ -101,6 +101,17 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                     )
                 observeResponse(result)
                 activity.startActivityForResult(intent, GENERATE_REQUEST)
+            }
+            "pivEncryptWithKey" -> {
+                val arguments = call.arguments<List<Any>>()
+                val publicKeyData = arguments[0] as ByteArray
+                val data = arguments[1] as ByteArray
+                val publicKey =
+                    KeyFactory.getInstance("RSA").generatePublic(X509EncodedKeySpec(publicKeyData))
+                val encryptCipher = Cipher.getInstance("RSA/NONE/PKCS1Padding")
+                encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey)
+                val encryptedData = encryptCipher.doFinal(data)
+                result.success(encryptedData)
             }
             else -> {
                 result.notImplemented()

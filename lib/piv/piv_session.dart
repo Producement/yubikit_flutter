@@ -78,6 +78,12 @@ class YubikitFlutterPivSession {
     return decryptedData as Uint8List;
   }
 
+  Future<Uint8List> encryptWithKey(Uint8List publicKey, Uint8List data) async {
+    dynamic encryptedData =
+        await _channel.invokeMethod("pivEncryptWithKey", [publicKey, data]);
+    return encryptedData as Uint8List;
+  }
+
   Future<void> reset() async {
     await _channel.invokeMethod("pivReset");
   }
