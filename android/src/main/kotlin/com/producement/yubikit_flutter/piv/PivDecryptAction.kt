@@ -66,7 +66,9 @@ class PivDecryptAction : PivAction() {
         } catch (e: Exception) {
             commandState.cancel()
             Log.e(TAG, "Something went wrong", e)
-            throw e
+            val result = Intent()
+            result.putExtra("PIV_ERROR", e.localizedMessage)
+            return Pair(Activity.RESULT_OK, result)
         }
     }
 

@@ -1,5 +1,6 @@
 package com.producement.yubikit_flutter.piv
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -24,8 +25,14 @@ class PivResetAction : PivAction() {
         extras: Bundle,
         commandState: CommandState
     ): Pair<Int, Intent> {
-        val pivSession = PivSession(connection)
-        pivSession.reset()
-        return result()
+        return try {
+            val pivSession = PivSession(connection)
+            pivSession.reset()
+            result()
+        } catch (e: Exception) {
+            val result = Intent()
+            result.putExtra("PIV_ERROR", e.localizedMessage)
+            Pair(Activity.RESULT_OK, result)
+        }
     }
 }

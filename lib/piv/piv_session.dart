@@ -11,6 +11,35 @@ import 'package:yubikit_flutter/piv/piv_touch_policy.dart';
 import 'piv_slot.dart';
 
 class YubikitFlutterPivSession {
+  static const defaultPin = "123456";
+  static const defaultPuk = "12345678";
+  static const defaultManagementKey = [
+    0x01,
+    0x02,
+    0x03,
+    0x04,
+    0x05,
+    0x06,
+    0x07,
+    0x08,
+    0x01,
+    0x02,
+    0x03,
+    0x04,
+    0x05,
+    0x06,
+    0x07,
+    0x08,
+    0x01,
+    0x02,
+    0x03,
+    0x04,
+    0x05,
+    0x06,
+    0x07,
+    0x08
+  ];
+
   final MethodChannel _channel;
 
   YubikitFlutterPivSession(this._channel);
@@ -29,7 +58,7 @@ class YubikitFlutterPivSession {
       pinPolicy.value,
       touchPolicy.value,
       pin,
-      managementKeyType,
+      managementKeyType.value,
       managementKey
     ]);
     return publicKey as Uint8List;
@@ -50,6 +79,6 @@ class YubikitFlutterPivSession {
   }
 
   Future<void> reset() async {
-    await _channel.invokeMethod("reset");
+    await _channel.invokeMethod("pivReset");
   }
 }

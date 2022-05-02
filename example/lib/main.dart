@@ -6,6 +6,7 @@ import 'package:yubikit_flutter/piv/piv_key_algorithm.dart';
 import 'package:yubikit_flutter/piv/piv_key_type.dart';
 import 'package:yubikit_flutter/piv/piv_management_key_type.dart';
 import 'package:yubikit_flutter/piv/piv_pin_policy.dart';
+import 'package:yubikit_flutter/piv/piv_session.dart';
 
 import 'package:yubikit_flutter/piv/piv_slot.dart';
 import 'package:yubikit_flutter/piv/piv_touch_policy.dart';
@@ -68,7 +69,7 @@ class _MyAppState extends State<MyApp> {
                                 YKFPIVKeyType.rsa2048,
                                 YKFPIVKeyAlgorithm
                                     .rsaSignatureMessagePKCS1v15SHA512,
-                                "12345678",
+                                YubikitFlutterPivSession.defaultPin,
                                 Uint8List.fromList(data.codeUnits)))
                       },
                   child: const Text("Sign")),
@@ -78,11 +79,12 @@ class _MyAppState extends State<MyApp> {
                             .generateKey(
                                 YKFPIVSlot.signature,
                                 YKFPIVKeyType.rsa2048,
-                                YKFPIVPinPolicy.always,
-                                YKFPIVTouchPolicy.always,
-                                YKFPIVManagementKeyType.aes128,
-                                Uint8List.fromList("".codeUnits),
-                                "12345678"))
+                                YKFPIVPinPolicy.def,
+                                YKFPIVTouchPolicy.def,
+                                YKFPIVManagementKeyType.tripleDES,
+                                Uint8List.fromList(YubikitFlutterPivSession
+                                    .defaultManagementKey),
+                                YubikitFlutterPivSession.defaultPin))
                       },
                   child: const Text("Generate key")),
               ElevatedButton(
@@ -91,13 +93,25 @@ class _MyAppState extends State<MyApp> {
                         .decryptWithKey(
                             YKFPIVSlot.signature,
                             YKFPIVKeyAlgorithm.rsaEncryptionPKCS1,
-                            "12345678",
-                            Uint8List.fromList("".codeUnits));
+                            YubikitFlutterPivSession.defaultPin,
+                            Uint8List.fromList(data.codeUnits));
                     setState(() {
                       this.publicKey = publicKey;
                     });
                   },
                   child: const Text("Decrypt data")),
+              ElevatedButton(
+                  onPressed: () async {}, child: const Text("Encrypt data")),
+              ElevatedButton(
+                  onPressed: () async {
+                    await YubikitFlutter.pivSession().reset();
+                    setState(() {
+                      publicKey = null;
+                      signature = null;
+                      data = "Hello World";
+                    });
+                  },
+                  child: const Text("Reset")),
               Text("Signature: " + (base64.encode(signature ?? []))),
               Text("Public key: " + (base64.encode(publicKey ?? []))),
               Text("Data: " + data),

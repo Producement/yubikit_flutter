@@ -31,7 +31,8 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     private lateinit var channel: MethodChannel
     private lateinit var context: Context
     private lateinit var activity: FlutterActivity
-    private val responseData = MutableLiveData<kotlin.Result<*>>()
+    private lateinit var binding: ActivityPluginBinding
+    private var responseData: MutableLiveData<kotlin.Result<*>>? = null
 
     companion object {
         private const val TAG = "YubikitFlutter"
@@ -85,7 +86,7 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 val pinPolicy = arguments[2] as Int
                 val touchPolicy = arguments[3] as Int
                 val pin = arguments[4] as String
-                val managementKeyType = arguments[5] as Byte
+                val managementKeyType = arguments[5] as Int
                 val managementKey = arguments[6] as ByteArray
                 val intent =
                     pivGenerateIntent(
@@ -95,7 +96,7 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                         keyType,
                         pinPolicy,
                         touchPolicy,
-                        managementKeyType,
+                        managementKeyType.toByte(),
                         managementKey
                     )
                 observeResponse(result)
@@ -108,11 +109,23 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     }
 
     private fun observeResponse(result: Result) {
-        responseData.observe(activity) { newValue ->
+        Log.d(TAG, "Registering observer")
+        responseData = MutableLiveData()
+        responseData!!.observe(activity) { newValue ->
             Log.d(TAG, "Observed value $newValue")
-            responseData.removeObservers(activity)
-            newValue.onFailure { t -> result.error("yubikit.error", t.message, "") }
-            newValue.onSuccess { t -> result.success(t) }
+            Log.d(TAG, "Observers removed")
+            newValue.onFailure { t ->
+                Log.d(TAG, "Received error")
+                result.error(
+                    "yubikit.error",
+                    t.message,
+                    ""
+                )
+            }
+            newValue.onSuccess { t ->
+                Log.d(TAG, "Received success")
+                result.success(t)
+            }
         }
     }
 
@@ -125,55 +138,62 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         Log.d(TAG, "Attached to activity")
         activity = binding.activity as FlutterActivity
+        this.binding = binding
         binding.addActivityResultListener(this)
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
         Log.d(TAG, "Detached from activity for config changes")
+        binding.removeActivityResultListener(this)
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         Log.d(TAG, "Reattached to activity")
         activity = binding.activity as FlutterActivity
+        this.binding = binding
         binding.addActivityResultListener(this)
     }
 
     override fun onDetachedFromActivity() {
         Log.d(TAG, "Detached from activity")
+        binding.removeActivityResultListener(this)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent): Boolean {
-        Log.d(TAG, "Hey this is the data $data")
-        if (data.hasExtra("PIV_ERROR")) {
-            responseData.postValue(
-                kotlin.Result.failure<Exception>(
-                    Exception(
-                        data.getStringExtra(
-                            "PIV_ERROR"
+        Log.d(TAG, "This is the data ${data.toUri(0)}")
+        val responseData = this.responseData
+        if (responseData != null) {
+            if (data.hasExtra("PIV_ERROR")) {
+                responseData.postValue(
+                    kotlin.Result.failure<Exception>(
+                        Exception(
+                            data.getStringExtra(
+                                "PIV_ERROR"
+                            )
                         )
                     )
                 )
-            )
-        } else {
-            when (requestCode) {
-                SIGNATURE_REQUEST -> responseData.postValue(
-                    kotlin.Result.success(
-                        PivSignAction.getPivSignature(
-                            data
+            } else {
+                when (requestCode) {
+                    SIGNATURE_REQUEST -> responseData.postValue(
+                        kotlin.Result.success(
+                            PivSignAction.getPivSignature(
+                                data
+                            )
                         )
                     )
-                )
-                DECRYPT_REQUEST -> responseData.postValue(
-                    kotlin.Result.success(
-                        PivDecryptAction.getPivDecrypted(
-                            data
+                    DECRYPT_REQUEST -> responseData.postValue(
+                        kotlin.Result.success(
+                            PivDecryptAction.getPivDecrypted(
+                                data
+                            )
                         )
                     )
-                )
-                GENERATE_REQUEST -> responseData.postValue(
-                    kotlin.Result.success(PivGenerateAction.getPivGenerate(data))
-                )
-                RESET_REQUEST -> responseData.postValue(kotlin.Result.success(null))
+                    GENERATE_REQUEST -> responseData.postValue(
+                        kotlin.Result.success(PivGenerateAction.getPivGenerate(data))
+                    )
+                    RESET_REQUEST -> responseData.postValue(kotlin.Result.success(null))
+                }
             }
         }
         return true
