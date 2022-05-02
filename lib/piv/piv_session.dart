@@ -48,4 +48,8 @@ class YubikitFlutterPivSession {
         "pivDecryptWithKey", [slot.value, algorithm.value, pin, encryptedData]);
     return decryptedData as Uint8List;
   }
+
+  Future<void> reset() async {
+    await _channel.invokeMethod("reset");
+  }
 }

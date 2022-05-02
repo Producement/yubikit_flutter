@@ -1,13 +1,11 @@
-package com.producement.yubikit_flutter
+package com.producement.yubikit_flutter.piv
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import com.yubico.yubikit.android.ui.YubiKeyPromptActivity
 import com.yubico.yubikit.core.application.CommandState
-import com.yubico.yubikit.core.smartcard.ApduException
 import com.yubico.yubikit.core.smartcard.SmartCardConnection
 import com.yubico.yubikit.core.util.Pair
 import com.yubico.yubikit.piv.*
@@ -66,9 +64,7 @@ class PivGenerateAction : PivAction() {
                 TouchPolicy.fromValue(touchPolicy),
             )
             Log.d(TAG, "Generated private key")
-            val result = Intent()
-            result.putExtra("PIV_RESULT", publicKey.encoded)
-            return Pair(Activity.RESULT_OK, result)
+            return result(publicKey.encoded)
         } catch (e: Exception) {
             commandState.cancel()
             Log.e(TAG, "Something went wrong", e)

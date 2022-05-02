@@ -16,6 +16,29 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         let conn = YubiKeyConnection()
         switch(call.method) {
+        case "pivReset":
+            conn.connection { connection in
+                self.logger.info("Connection set up: \(connection.debugDescription!)")
+                connection.pivSession { session, error in
+                    guard let session = session else {
+                        self.logger.error("Error! Reason: \(error!.localizedDescription)")
+                        result(FlutterError(code: "session.error", message: "\(error!.localizedDescription)", details: ""))
+                        return
+                    }
+                    session.reset { error in
+                        defer {
+                            self.logger.info("Closing NFC connection")
+                            conn.nfcConnection?.stop()
+                        }
+                        if (error != nil) {
+                            self.logger.info("Reset error: \(error.debugDescription)")
+                            result(FlutterError(code: "reset.error", message: "\(error!.localizedDescription)", details: ""))
+                            return
+                        }
+                        result(nil)
+                    }
+                }
+            }
         case "pivSetPin":
             conn.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")

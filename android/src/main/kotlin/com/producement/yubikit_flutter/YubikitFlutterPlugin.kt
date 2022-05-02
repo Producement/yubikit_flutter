@@ -5,9 +5,15 @@ import android.content.Intent
 import android.util.Log
 import androidx.annotation.NonNull
 import androidx.lifecycle.MutableLiveData
-import com.producement.yubikit_flutter.PivDecryptAction.Companion.pivDecryptIntent
-import com.producement.yubikit_flutter.PivGenerateAction.Companion.pivGenerateIntent
-import com.producement.yubikit_flutter.PivSignAction.Companion.pivSignIntent
+import com.producement.yubikit_flutter.piv.PivDecryptAction.Companion.pivDecryptIntent
+import com.producement.yubikit_flutter.piv.PivGenerateAction.Companion.pivGenerateIntent
+import com.producement.yubikit_flutter.piv.PivSignAction.Companion.pivSignIntent
+import com.producement.yubikit_flutter.piv.PivDecryptAction
+import com.producement.yubikit_flutter.piv.PivGenerateAction
+import com.producement.yubikit_flutter.piv.PivResetAction
+import com.producement.yubikit_flutter.piv.PivSignAction
+import dagger.hilt.android.AndroidEntryPoint
+import dagger.hilt.android.HiltAndroidApp
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -18,7 +24,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry
 import java.lang.Exception
-import java.lang.RuntimeException
+import javax.inject.Inject
 
 class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     PluginRegistry.ActivityResultListener {
@@ -32,6 +38,7 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         private const val SIGNATURE_REQUEST = 1
         private const val DECRYPT_REQUEST = 2
         private const val GENERATE_REQUEST = 3
+        private const val RESET_REQUEST = 4
     }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -44,6 +51,11 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         Log.d(TAG, "Method ${call.method} called")
         when (call.method) {
+            "pivReset" -> {
+                val intent = PivResetAction.pivResetIntent(context)
+                observeResponse(result)
+                activity.startActivityForResult(intent, RESET_REQUEST)
+            }
             "pivSignWithKey" -> {
                 val arguments = call.arguments<List<Any>>()
                 val slot = arguments[0] as Int
@@ -161,6 +173,7 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 GENERATE_REQUEST -> responseData.postValue(
                     kotlin.Result.success(PivGenerateAction.getPivGenerate(data))
                 )
+                RESET_REQUEST -> responseData.postValue(kotlin.Result.success(null))
             }
         }
         return true
