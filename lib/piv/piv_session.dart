@@ -90,4 +90,30 @@ class YubikitFlutterPivSession {
   Future<void> setPuk(String newPuk, String oldPuk) async {
     await _channel.invokeMethod("pivSetPuk", [newPuk, oldPuk]);
   }
+
+  Future<Uint8List> getCertificate(YKFPIVSlot slot, String pin) async {
+    return await _channel.invokeMethod("pivGetCertificate", [slot.value, pin]);
+  }
+
+  Future<Uint8List> putCertificate(
+    YKFPIVSlot slot,
+    String pin,
+    Uint8List certificate,
+    YKFPIVManagementKeyType managementKeyType,
+    Uint8List managementKey,
+  ) async {
+    return await _channel.invokeMethod("pivPutCertificate",
+        [slot.value, pin, certificate, managementKeyType.value, managementKey]);
+  }
+
+  Future<Uint8List> calculateSecretKey(
+    YKFPIVSlot slot,
+    String pin,
+    Uint8List publicKey,
+    YKFPIVManagementKeyType managementKeyType,
+    Uint8List managementKey,
+  ) async {
+    return await _channel.invokeMethod("pivCalculateSecretKey",
+        [slot.value, pin, publicKey, managementKeyType.value, managementKey]);
+  }
 }

@@ -246,6 +246,140 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                     }
                 }
             }
+        case "pivCalculateSecretKey":
+            yubiKeyConnection.connection { connection in
+                self.logger.info("Connection set up: \(connection.debugDescription!)")
+                connection.pivSession { session, error in
+                    self.logger.info("PIV session set up: \(session.debugDescription)")
+                    guard let session = session else {
+                        self.logger.error("Error! Reason: \(error!.localizedDescription)")
+                        result(FlutterError(code: "session.error", message: "\(error!.localizedDescription)", details: ""))
+                        return
+                    }
+                    let slot  = (call.arguments as! Array<Any>)[0] as! NSNumber
+                    let publicKey = (call.arguments as! Array<Any>)[1] as! FlutterStandardTypedData
+                    let pin  = (call.arguments as! Array<Any>)[2] as! String
+                    let managementKeyType = (call.arguments as! Array<Any>)[3] as! NSNumber
+                    let managementKey = (call.arguments as! Array<Any>)[4] as! FlutterStandardTypedData
+                    session.verifyPin(pin) { code, error in
+                        if (error != nil) {
+                            self.logger.info("PIN verification error: \(error.debugDescription)")
+                            result(FlutterError(code: "pin.error", message: "\(error!.localizedDescription)", details: ""))
+                            return
+                        }
+                        self.logger.info("PIN verification successful. Remaining attempts: \(code)")
+                        let pivManagementKey = YKFPIVManagementKeyType.fromValue(UInt8(truncating: managementKeyType))!
+                        session.authenticate(withManagementKey: managementKey.data, type: pivManagementKey) {error in
+                            if (error != nil) {
+                                self.logger.info("Authentication error: \(error.debugDescription)")
+                                result(FlutterError(code: "authentication.error", message: "\(error!.localizedDescription)", details: ""))
+                                return
+                            }
+                            let pivSlot = YKFPIVSlot.init(rawValue: UInt(truncating: slot))!
+                            let attributes = [kSecAttrKeyType: kSecAttrKeyTypeEC, kSecAttrKeyClass: kSecAttrKeyClassPublic] as CFDictionary
+                            var error: Unmanaged<CFError>?
+                            let key = SecKeyCreateWithData(publicKey.data as CFData, attributes, &error)
+                            guard let key = key else {
+                                self.logger.info("Key creation error: \(error.debugDescription)")
+                                result(FlutterError(code: "key.error", message: "\(error.debugDescription)", details: ""))
+                                return
+                            }
+                            session.calculateSecretKey(in: pivSlot, peerPublicKey: key) { data, error in
+                                defer {
+                                    conn.nfcConnection?.stop()
+                                }
+                                guard let data = data else {
+                                    self.logger.error("Failed to calculate secret key: \(error!.localizedDescription)")
+                                    result(FlutterError(code: "key.create.error", message: "\(error!.localizedDescription)", details: ""))
+                                    return
+                                }
+                                result(data)
+                            }
+                        }
+                }
+            }
+        }
+        case "pivGetCertificate":
+            yubiKeyConnection.connection { connection in
+                self.logger.info("Connection set up: \(connection.debugDescription!)")
+                connection.pivSession { session, error in
+                    self.logger.info("PIV session set up: \(session.debugDescription)")
+                    guard let session = session else {
+                        self.logger.error("Error! Reason: \(error!.localizedDescription)")
+                        result(FlutterError(code: "session.error", message: "\(error!.localizedDescription)", details: ""))
+                        return
+                    }
+                    let slot  = (call.arguments as! Array<Any>)[0] as! NSNumber
+                    let pin  = (call.arguments as! Array<Any>)[1] as! String
+                    session.verifyPin(pin) { code, error in
+                        if (error != nil) {
+                            self.logger.info("PIN verification error: \(error.debugDescription)")
+                            result(FlutterError(code: "pin.error", message: "\(error!.localizedDescription)", details: ""))
+                            return
+                        }
+                        self.logger.info("PIN verification successful. Remaining attempts: \(code)")
+                        let pivSlot = YKFPIVSlot.init(rawValue: UInt(truncating: slot))!
+                        session.getCertificateIn(pivSlot){ certificate, error in
+                            defer {
+                                conn.nfcConnection?.stop()
+                            }
+                            guard let certificate = certificate else {
+                                self.logger.error("Failed to get certificate: \(error!.localizedDescription)")
+                                result(FlutterError(code: "certificate.get.error", message: "\(error!.localizedDescription)", details: ""))
+                                return
+                            }
+                            let data = SecCertificateCopyData(certificate)
+                            result(data)
+                        }
+                    }
+                }
+            }
+        case "pivPutCertificate":
+            yubiKeyConnection.connection { connection in
+                self.logger.info("Connection set up: \(connection.debugDescription!)")
+                connection.pivSession { session, error in
+                    self.logger.info("PIV session set up: \(session.debugDescription)")
+                    guard let session = session else {
+                        self.logger.error("Error! Reason: \(error!.localizedDescription)")
+                        result(FlutterError(code: "session.error", message: "\(error!.localizedDescription)", details: ""))
+                        return
+                    }
+                    let slot  = (call.arguments as! Array<Any>)[0] as! NSNumber
+                    let pin  = (call.arguments as! Array<Any>)[1] as! String
+                    let certificate = (call.arguments as! Array<Any>)[2] as! FlutterStandardTypedData
+                    let managementKeyType = (call.arguments as! Array<Any>)[3] as! NSNumber
+                    let managementKey = (call.arguments as! Array<Any>)[4] as! FlutterStandardTypedData
+                    session.verifyPin(pin) { code, error in
+                        if (error != nil) {
+                            self.logger.info("PIN verification error: \(error.debugDescription)")
+                            result(FlutterError(code: "pin.error", message: "\(error!.localizedDescription)", details: ""))
+                            return
+                        }
+                        self.logger.info("PIN verification successful. Remaining attempts: \(code)")
+                        let pivManagementKey = YKFPIVManagementKeyType.fromValue(UInt8(truncating: managementKeyType))!
+                        session.authenticate(withManagementKey: managementKey.data, type: pivManagementKey) {error in
+                            if (error != nil) {
+                                self.logger.info("Authentication error: \(error.debugDescription)")
+                                result(FlutterError(code: "authentication.error", message: "\(error!.localizedDescription)", details: ""))
+                                return
+                            }
+                            let pivSlot = YKFPIVSlot.init(rawValue: UInt(truncating: slot))!
+                            let pivCertificate = SecCertificateCreateWithData( nil, certificate.data as CFData)!
+                            session.putCertificate(pivCertificate, inSlot: pivSlot, completion: { error in
+                                defer {
+                                    conn.nfcConnection?.stop()
+                                }
+                                if (error != nil) {
+                                    self.logger.info("Failed to put certificate: \(error.debugDescription)")
+                                    result(FlutterError(code: "certificate.put.error", message: "\(error!.localizedDescription)", details: ""))
+                                    return
+                                }
+                                result(nil)
+                            })
+                        }
+                    }
+                }
+            }
         case "pivEncryptWithKey":
             let publicKey = (call.arguments as! Array<Any>)[0] as! FlutterStandardTypedData
             let message = (call.arguments as! Array<Any>)[1] as! FlutterStandardTypedData

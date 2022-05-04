@@ -9,28 +9,30 @@ import com.yubico.yubikit.android.ui.YubiKeyPromptActivity
 import com.yubico.yubikit.core.application.CommandState
 import com.yubico.yubikit.core.smartcard.SmartCardConnection
 import com.yubico.yubikit.core.util.Pair
-import com.yubico.yubikit.piv.*
+import com.yubico.yubikit.piv.ManagementKeyType
+import com.yubico.yubikit.piv.PivSession
+import com.yubico.yubikit.piv.Slot
+import java.security.KeyFactory
+import java.security.interfaces.ECPublicKey
+import java.security.spec.ECPublicKeySpec
+import java.security.spec.X509EncodedKeySpec
 
-class PivGenerateAction : PivAction() {
+class PivSecretKeyAction : PivAction() {
     companion object {
-        private const val TAG = "PivGenerateAction"
-        fun pivGenerateIntent(
+        private const val TAG = "PivSecretKeyAction"
+        fun pivSecretKeyIntent(
             context: Context,
             pin: String,
             slot: Int,
-            keyType: Int,
-            pinPolicy: Int,
-            touchPolicy: Int,
+            publicKey: ByteArray,
             managementKeyType: Byte,
             managementKey: ByteArray,
         ): Intent {
             Log.d(TAG, "Creating intent")
-            val intent = YubiKeyPromptActivity.createIntent(context, PivGenerateAction::class.java)
+            val intent = YubiKeyPromptActivity.createIntent(context, PivSecretKeyAction::class.java)
             intent.putExtra("PIV_PIN", pin)
-            intent.putExtra("PIV_KEY_TYPE", keyType)
             intent.putExtra("PIV_SLOT", slot)
-            intent.putExtra("PIV_PIN_POLICY", pinPolicy)
-            intent.putExtra("PIV_TOUCH_POLICY", touchPolicy)
+            intent.putExtra("PIV_PUBLIC_KEY", publicKey)
             intent.putExtra("PIV_MANAGEMENT_KEY_TYPE", managementKeyType)
             intent.putExtra("PIV_MANAGEMENT_KEY", managementKey)
             return intent
@@ -42,34 +44,23 @@ class PivGenerateAction : PivAction() {
         extras: Bundle,
         commandState: CommandState
     ): Pair<Int, Intent> {
-        try {
-            Log.d(TAG, "Yubikey connection created")
-            val pin = extras.getString("PIV_PIN")!!
+        return try {
             val slot = extras.getInt("PIV_SLOT")
-            val keyType = extras.getInt("PIV_KEY_TYPE")
+            val pin = extras.getString("PIV_PIN")!!
+            val publicKeyData = extras.getByteArray("PIV_PUBLIC_KEY")
             val managementKeyType = extras.getByte("PIV_MANAGEMENT_KEY_TYPE")
             val managementKey = extras.getByteArray("PIV_MANAGEMENT_KEY")!!
-            val pinPolicy = extras.getInt("PIV_PIN_POLICY")
-            val touchPolicy = extras.getInt("PIV_TOUCH_POLICY")
-
             val pivSession = PivSession(connection)
+            val publicKey =
+                KeyFactory.getInstance("EC").generatePublic(X509EncodedKeySpec(publicKeyData))
             pivSession.verifyPin(pin.toCharArray())
             pivSession.authenticate(ManagementKeyType.fromValue(managementKeyType), managementKey)
-
-            val publicKey = pivSession.generateKey(
-                Slot.fromValue(slot),
-                KeyType.fromValue(keyType),
-                PinPolicy.fromValue(pinPolicy),
-                TouchPolicy.fromValue(touchPolicy),
-            )
-            Log.d(TAG, "Generated private key")
-            return result(publicKey.encoded)
+            val key = pivSession.calculateSecret(Slot.fromValue(slot), publicKey as ECPublicKey)
+            result(key)
         } catch (e: Exception) {
-            commandState.cancel()
-            Log.e(TAG, "Something went wrong", e)
             val result = Intent()
             result.putExtra("PIV_ERROR", e.localizedMessage)
-            return Pair(Activity.RESULT_OK, result)
+            Pair(Activity.RESULT_OK, result)
         }
     }
 }

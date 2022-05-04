@@ -39,6 +39,9 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         private const val RESET_REQUEST = 4
         private const val SET_PIN_REQUEST = 5
         private const val SET_PUK_REQUEST = 6
+        private const val GET_CERTIFICATE_REQUEST = 7
+        private const val PUT_CERTIFICATE_REQUEST = 8
+        private const val SECRET_KEY_REQUEST = 9
     }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -116,6 +119,52 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                     )
                 observeResponse(result)
                 activity.startActivityForResult(intent, GENERATE_REQUEST)
+            }
+            "pivCalculateSecretKey" -> {
+                val arguments = call.arguments<List<Any>>()
+                val slot = arguments[0] as Int
+                val pin = arguments[1] as String
+                val publicKeyData = arguments[2] as ByteArray
+                val managementKeyType = arguments[3] as Int
+                val managementKey = arguments[4] as ByteArray
+                val intent =
+                    PivSecretKeyAction.pivSecretKeyIntent(
+                        context,
+                        pin,
+                        slot,
+                        publicKeyData,
+                        managementKeyType.toByte(),
+                        managementKey
+                    )
+                observeResponse(result)
+                activity.startActivityForResult(intent, SECRET_KEY_REQUEST)
+            }
+            "pivGetCertificate" -> {
+                val arguments = call.arguments<List<Any>>()
+                val slot = arguments[0] as Int
+                val pin = arguments[1] as String
+                val intent = PivGetCertificateAction.pivGetCertificateIntent(context, pin, slot)
+                observeResponse(result)
+                activity.startActivityForResult(intent, GET_CERTIFICATE_REQUEST)
+            }
+            "pivPutCertificate" -> {
+                val arguments = call.arguments<List<Any>>()
+                val slot = arguments[0] as Int
+                val pin = arguments[1] as String
+                val data = arguments[2] as ByteArray
+                val managementKeyType = arguments[3] as Int
+                val managementKey = arguments[4] as ByteArray
+                val intent =
+                    PivPutCertificateAction.pivPutCertificateIntent(
+                        context,
+                        pin,
+                        slot,
+                        data,
+                        managementKeyType.toByte(),
+                        managementKey
+                    )
+                observeResponse(result)
+                activity.startActivityForResult(intent, PUT_CERTIFICATE_REQUEST)
             }
             "pivEncryptWithKey" -> {
                 val arguments = call.arguments<List<Any>>()
@@ -201,22 +250,11 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                 )
             } else {
                 when (requestCode) {
-                    SIGNATURE_REQUEST -> responseData.postValue(
+                    SIGNATURE_REQUEST, DECRYPT_REQUEST, GENERATE_REQUEST,
+                    GET_CERTIFICATE_REQUEST, SECRET_KEY_REQUEST -> responseData.postValue(
                         kotlin.Result.success(
-                            PivSignAction.getPivSignature(
-                                data
-                            )
+                            data.getByteArrayExtra("PIV_RESULT")
                         )
-                    )
-                    DECRYPT_REQUEST -> responseData.postValue(
-                        kotlin.Result.success(
-                            PivDecryptAction.getPivDecrypted(
-                                data
-                            )
-                        )
-                    )
-                    GENERATE_REQUEST -> responseData.postValue(
-                        kotlin.Result.success(PivGenerateAction.getPivGenerate(data))
                     )
                     else -> responseData.postValue(kotlin.Result.success(null))
                 }
