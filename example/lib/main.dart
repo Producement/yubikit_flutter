@@ -103,8 +103,7 @@ class _MyAppState extends State<MyApp> {
               ElevatedButton(
                   onPressed: () async {
                     Uint8List encryptedData = await YubikitFlutter.pivSession()
-                        .encryptWithKey(
-                            publicKey!, data);
+                        .encryptWithKey(publicKey!, data);
                     setState(() {
                       data = encryptedData;
                     });
