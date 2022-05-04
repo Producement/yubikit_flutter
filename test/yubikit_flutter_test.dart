@@ -10,7 +10,7 @@ void main() {
 
   setUp(() {
     channel.setMockMethodCallHandler((MethodCall methodCall) async {
-      if(methodCall.method == "pivReset"){
+      if (methodCall.method == "pivReset") {
         return null;
       }
       return '42';
