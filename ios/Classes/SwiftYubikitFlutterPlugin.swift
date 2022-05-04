@@ -13,12 +13,13 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
     }
     
     let logger = Logger()
+    let yubiKeyConnection = YubiKeyConnection()
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         let conn = YubiKeyConnection()
         switch(call.method) {
         case "pivReset":
-            conn.connection { connection in
+            yubiKeyConnection.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     guard let session = session else {
@@ -41,7 +42,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                 }
             }
         case "pivSetPin":
-            conn.connection { connection in
+            yubiKeyConnection.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
@@ -67,7 +68,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                 }
             }
         case "pivSetPuk":
-            conn.connection { connection in
+            yubiKeyConnection.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
@@ -93,7 +94,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                 }
             }
         case "pivGenerateKey":
-            conn.connection { connection in
+            yubiKeyConnection.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
@@ -146,7 +147,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                 }
             }
         case "pivSignWithKey":
-            conn.connection { connection in
+            yubiKeyConnection.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
@@ -199,7 +200,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                 }
             }
         case "pivDecryptWithKey":
-            conn.connection { connection in
+            yubiKeyConnection.connection { connection in
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
@@ -248,8 +249,14 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
         case "pivEncryptWithKey":
             let publicKey = (call.arguments as! Array<Any>)[0] as! FlutterStandardTypedData
             let message = (call.arguments as! Array<Any>)[1] as! FlutterStandardTypedData
-            let attributes = [kSecAttrKeyType: kSecAttrKeyTypeRSA] as CFDictionary
-            let key = SecKeyCreateWithData(publicKey.data as CFData, attributes, nil)!
+            let attributes = [kSecAttrKeyType: kSecAttrKeyTypeRSA, kSecAttrKeyClass: kSecAttrKeyClassPublic] as CFDictionary
+            var error: Unmanaged<CFError>?
+            let key = SecKeyCreateWithData(publicKey.data as CFData, attributes, &error)
+            guard let key = key else {
+                self.logger.info("Key creation error: \(error.debugDescription)")
+                result(FlutterError(code: "key.error", message: "\(error.debugDescription)", details: ""))
+                return
+            }
             let key_size = SecKeyGetBlockSize(key)
             var encrypt_bytes = [UInt8](repeating: 0, count: key_size)
             var output_size : Int = key_size
@@ -257,7 +264,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                 let bytes = unsafeBytes.bindMemory(to: UInt8.self).baseAddress!
                 SecKeyEncrypt(key, SecPadding.PKCS1, bytes, Int(message.elementCount), &encrypt_bytes, &output_size)
             }
-            result(encrypt_bytes)
+            result(Data(encrypt_bytes))
         default:
             result(FlutterMethodNotImplemented)
         }
