@@ -5,11 +5,11 @@
 Pod::Spec.new do |s|
   s.name             = 'yubikit_flutter'
   s.version          = '0.0.1'
-  s.summary          = 'A new flutter plugin project.'
+  s.summary          = 'Wrapper for YubiKit iOS and Android SDKs.'
   s.description      = <<-DESC
 A new flutter plugin project.
                        DESC
-  s.homepage         = 'http://producement.com'
+  s.homepage         = 'https://github.com/Producement/yubikit_flutter'
   s.license          = { :file => '../LICENSE' }
   s.author           = { 'Producement OÜ' => 'maido@producement.com' }
   s.source           = { :path => '.' }

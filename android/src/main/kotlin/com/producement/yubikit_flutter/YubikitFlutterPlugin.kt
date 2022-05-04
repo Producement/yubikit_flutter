@@ -5,12 +5,9 @@ import android.content.Intent
 import android.util.Log
 import androidx.annotation.NonNull
 import androidx.lifecycle.MutableLiveData
-import com.producement.yubikit_flutter.piv.PivDecryptAction
+import com.producement.yubikit_flutter.piv.*
 import com.producement.yubikit_flutter.piv.PivDecryptAction.Companion.pivDecryptIntent
-import com.producement.yubikit_flutter.piv.PivGenerateAction
 import com.producement.yubikit_flutter.piv.PivGenerateAction.Companion.pivGenerateIntent
-import com.producement.yubikit_flutter.piv.PivResetAction
-import com.producement.yubikit_flutter.piv.PivSignAction
 import com.producement.yubikit_flutter.piv.PivSignAction.Companion.pivSignIntent
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -40,6 +37,8 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         private const val DECRYPT_REQUEST = 2
         private const val GENERATE_REQUEST = 3
         private const val RESET_REQUEST = 4
+        private const val SET_PIN_REQUEST = 5
+        private const val SET_PUK_REQUEST = 6
     }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -52,6 +51,22 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         Log.d(TAG, "Method ${call.method} called")
         when (call.method) {
+            "pivSetPin" -> {
+                val arguments = call.arguments<List<Any>>()
+                val newPin = arguments[0] as String
+                val oldPin = arguments[1] as String
+                val intent = PivSetPinAction.pivSetPinIntent(context, oldPin, newPin)
+                observeResponse(result)
+                activity.startActivityForResult(intent, SET_PIN_REQUEST)
+            }
+            "pivSetPuk" -> {
+                val arguments = call.arguments<List<Any>>()
+                val newPuk = arguments[0] as String
+                val oldPuk = arguments[1] as String
+                val intent = PivSetPukAction.pivSetPukIntent(context, oldPuk, newPuk)
+                observeResponse(result)
+                activity.startActivityForResult(intent, SET_PUK_REQUEST)
+            }
             "pivReset" -> {
                 val intent = PivResetAction.pivResetIntent(context)
                 observeResponse(result)
@@ -203,7 +218,7 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                     GENERATE_REQUEST -> responseData.postValue(
                         kotlin.Result.success(PivGenerateAction.getPivGenerate(data))
                     )
-                    RESET_REQUEST -> responseData.postValue(kotlin.Result.success(null))
+                    else -> responseData.postValue(kotlin.Result.success(null))
                 }
             }
         }

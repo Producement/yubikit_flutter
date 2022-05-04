@@ -3,6 +3,7 @@ import UIKit
 import Foundation
 import OSLog
 import YubiKit
+import Security
 
 public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
@@ -244,6 +245,19 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
                     }
                 }
             }
+        case "pivEncryptWithKey":
+            let publicKey = (call.arguments as! Array<Any>)[0] as! FlutterStandardTypedData
+            let message = (call.arguments as! Array<Any>)[1] as! FlutterStandardTypedData
+            let attributes = [kSecAttrKeyType: kSecAttrKeyTypeRSA] as CFDictionary
+            let key = SecKeyCreateWithData(publicKey.data as CFData, attributes, nil)!
+            let key_size = SecKeyGetBlockSize(key)
+            var encrypt_bytes = [UInt8](repeating: 0, count: key_size)
+            var output_size : Int = key_size
+            message.data.withUnsafeBytes { (unsafeBytes:UnsafeRawBufferPointer) in
+                let bytes = unsafeBytes.bindMemory(to: UInt8.self).baseAddress!
+                SecKeyEncrypt(key, SecPadding.PKCS1, bytes, Int(message.elementCount), &encrypt_bytes, &output_size)
+            }
+            result(encrypt_bytes)
         default:
             result(FlutterMethodNotImplemented)
         }

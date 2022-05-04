@@ -1,18 +1,9 @@
-# yubikit_flutter
+# YubiKit Flutter
 
-A new flutter plugin project.
+Flutter wrapper around [YubiKit iOS](https://github.com/Yubico/yubikit-ios) and [YubiKit Android](https://github.com/Yubico/yubikit-android) SDKs.
 
-## Getting Started
+## About
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+Currently only PIV functionality is supported (partially).
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
-
-The plugin project was generated without specifying the `--platforms` flag, no platforms are currently supported.
-To add platforms, run `flutter create -t plugin --platforms <platforms> .` under the same
-directory. You can also find a detailed instruction on how to add platforms in the `pubspec.yaml` at https://flutter.dev/docs/development/packages-and-plugins/developing-packages#plugin-platforms.
+Check out YubiKit iOS and Android projects for more information.
