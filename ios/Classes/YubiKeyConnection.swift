@@ -39,6 +39,10 @@ extension YubiKeyConnection: YKFManagerDelegate {
        logger.info("NFC connected")
        nfcConnection = connection
         if let callback = connectionCallback {
+            defer {
+                self.logger.info("Closing NFC connection")
+                connection.stop()
+            }
             callback(connection)
             logger.info("NFC connection callback completed")
         }

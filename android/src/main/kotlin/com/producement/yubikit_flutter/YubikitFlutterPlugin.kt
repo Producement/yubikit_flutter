@@ -9,6 +9,7 @@ import com.producement.yubikit_flutter.piv.*
 import com.producement.yubikit_flutter.piv.PivDecryptAction.Companion.pivDecryptIntent
 import com.producement.yubikit_flutter.piv.PivGenerateAction.Companion.pivGenerateIntent
 import com.producement.yubikit_flutter.piv.PivSignAction.Companion.pivSignIntent
+import com.yubico.yubikit.piv.KeyType
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -168,11 +169,20 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
             }
             "pivEncryptWithKey" -> {
                 val arguments = call.arguments<List<Any>>()
-                val publicKeyData = arguments[0] as ByteArray
-                val data = arguments[1] as ByteArray
+                val keyType = arguments[0] as Int
+                val publicKeyData = arguments[1] as ByteArray
+                val data = arguments[2] as ByteArray
+                val algorithm = when (KeyType.fromValue(keyType)) {
+                    KeyType.RSA1024, KeyType.RSA2048 -> "RSA"
+                    KeyType.ECCP256, KeyType.ECCP384 -> "EC"
+                    else -> {
+                        result.error("key.type.error", "Unknown key type: $keyType", "")
+                        return
+                    }
+                }
                 val publicKey =
-                    KeyFactory.getInstance("RSA").generatePublic(X509EncodedKeySpec(publicKeyData))
-                val encryptCipher = Cipher.getInstance("RSA/NONE/PKCS1Padding")
+                    KeyFactory.getInstance(algorithm).generatePublic(X509EncodedKeySpec(publicKeyData))
+                val encryptCipher = Cipher.getInstance("$algorithm/NONE/PKCS1Padding")
                 encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey)
                 val encryptedData = encryptCipher.doFinal(data)
                 result.success(encryptedData)

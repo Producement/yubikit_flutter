@@ -75,8 +75,10 @@ class YubikitFlutterPivSession {
         "pivDecryptWithKey", [slot.value, algorithm.value, pin, encryptedData]);
   }
 
-  Future<Uint8List> encryptWithKey(Uint8List publicKey, Uint8List data) async {
-    return await _channel.invokeMethod("pivEncryptWithKey", [publicKey, data]);
+  Future<Uint8List> encryptWithKey(
+      YKFPIVKeyType type, Uint8List publicKey, Uint8List data) async {
+    return await _channel
+        .invokeMethod("pivEncryptWithKey", [type.value, publicKey, data]);
   }
 
   Future<void> reset() async {
@@ -110,10 +112,8 @@ class YubikitFlutterPivSession {
     YKFPIVSlot slot,
     String pin,
     Uint8List publicKey,
-    YKFPIVManagementKeyType managementKeyType,
-    Uint8List managementKey,
   ) async {
-    return await _channel.invokeMethod("pivCalculateSecretKey",
-        [slot.value, pin, publicKey, managementKeyType.value, managementKey]);
+    return await _channel
+        .invokeMethod("pivCalculateSecretKey", [slot.value, pin, publicKey]);
   }
 }
