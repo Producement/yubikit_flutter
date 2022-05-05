@@ -43,6 +43,7 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         private const val GET_CERTIFICATE_REQUEST = 7
         private const val PUT_CERTIFICATE_REQUEST = 8
         private const val SECRET_KEY_REQUEST = 9
+        private const val SERIAL_NUMBER_REQUEST = 10
     }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -55,6 +56,11 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         Log.d(TAG, "Method ${call.method} called")
         when (call.method) {
+            "pivSerialNumber" -> {
+                val intent = PivSerialNumberAction.pivSerialNumberIntent(context)
+                observeResponse(result)
+                activity.startActivityForResult(intent, SERIAL_NUMBER_REQUEST)
+            }
             "pivSetPin" -> {
                 val arguments = call.arguments<List<Any>>()
                 val newPin = arguments[0] as String
@@ -181,7 +187,8 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                     }
                 }
                 val publicKey =
-                    KeyFactory.getInstance(algorithm).generatePublic(X509EncodedKeySpec(publicKeyData))
+                    KeyFactory.getInstance(algorithm)
+                        .generatePublic(X509EncodedKeySpec(publicKeyData))
                 val encryptCipher = Cipher.getInstance("$algorithm/NONE/PKCS1Padding")
                 encryptCipher.init(Cipher.ENCRYPT_MODE, publicKey)
                 val encryptedData = encryptCipher.doFinal(data)
@@ -264,6 +271,13 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
                     GET_CERTIFICATE_REQUEST, SECRET_KEY_REQUEST -> responseData.postValue(
                         kotlin.Result.success(
                             data.getByteArrayExtra("PIV_RESULT")
+                        )
+                    )
+                    SERIAL_NUMBER_REQUEST -> responseData.postValue(
+                        kotlin.Result.success(
+                            data.getIntExtra(
+                                "PIV_RESULT", 0
+                            )
                         )
                     )
                     else -> responseData.postValue(kotlin.Result.success(null))

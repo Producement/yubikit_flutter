@@ -64,6 +64,17 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
         }
         
         switch(call.method) {
+        case "pivSerialNumber":
+            pivSession { session in
+                session.getSerialNumber { serialNumber, error in
+                    if (error != nil) {
+                        self.logger.info("Serial number error: \(error.debugDescription)")
+                        result(FlutterError(code: "serialnumber.error", message: "\(error!.localizedDescription)", details: ""))
+                        return
+                    }
+                    result(serialNumber)
+                }
+            }
         case "pivReset":
             pivSession { session in
                 session.reset { error in

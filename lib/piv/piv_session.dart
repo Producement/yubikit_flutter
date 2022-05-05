@@ -85,6 +85,10 @@ class YubikitFlutterPivSession {
     await _channel.invokeMethod("pivReset");
   }
 
+  Future<int> getSerialNumber() async {
+    return await _channel.invokeMethod("pivSerialNumber");
+  }
+
   Future<void> setPin(String newPin, String oldPin) async {
     await _channel.invokeMethod("pivSetPin", [newPin, oldPin]);
   }

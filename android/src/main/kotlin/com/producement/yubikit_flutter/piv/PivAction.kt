@@ -15,4 +15,12 @@ abstract class PivAction :
         }
         return Pair(Activity.RESULT_OK, result)
     }
+
+    protected fun result(data: Int? = null): Pair<Int, Intent> {
+        val result = Intent()
+        if (data != null) {
+            result.putExtra("PIV_RESULT", data)
+        }
+        return Pair(Activity.RESULT_OK, result)
+    }
 }
