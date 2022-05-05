@@ -27,7 +27,7 @@ class PivSerialNumberAction : PivAction() {
     ): Pair<Int, Intent> {
         return try {
             val pivSession = PivSession(connection)
-            result(pivSession.serialNumber)
+            intResult(pivSession.serialNumber)
         } catch (e: Exception) {
             val result = Intent()
             result.putExtra("PIV_ERROR", e.localizedMessage)
