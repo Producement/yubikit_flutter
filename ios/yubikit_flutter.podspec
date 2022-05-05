@@ -4,7 +4,7 @@
 #
 Pod::Spec.new do |s|
   s.name             = 'yubikit_flutter'
-  s.version          = '0.0.1'
+  s.version          = '0.0.2'
   s.summary          = 'Wrapper for YubiKit iOS and Android SDKs.'
   s.description      = <<-DESC
 A new flutter plugin project.
