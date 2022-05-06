@@ -1,6 +1,6 @@
 name: yubikit_flutter
 description: Wrapper for YubiKit iOS and Android SDKs
-version: 0.0.2
+version: 0.0.3
 homepage: https://github.com/Producement/yubikit_flutter
 
 environment:
@@ -8,6 +8,7 @@ environment:
   flutter: ">=2.5.0"
 
 dependencies:
+  convert: ^3.0.1
   flutter:
     sdk: flutter
 

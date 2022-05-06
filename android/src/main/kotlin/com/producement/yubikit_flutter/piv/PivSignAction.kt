@@ -33,8 +33,6 @@ class PivSignAction : PivAction() {
             intent.putExtra("PIV_MESSAGE", message)
             return intent
         }
-
-        fun getPivSignature(intent: Intent) = intent.getByteArrayExtra("PIV_RESULT")
     }
 
     override fun onYubiKeyConnection(
@@ -42,7 +40,7 @@ class PivSignAction : PivAction() {
         extras: Bundle,
         commandState: CommandState
     ): Pair<Int, Intent> {
-        try {
+        return tryWithCommand(commandState) {
             Log.d(TAG, "Yubikey connection created")
             val pin = extras.getString("PIV_PIN")!!
             val algorithm = extras.getString("PIV_ALGORITHM")!!
@@ -56,25 +54,20 @@ class PivSignAction : PivAction() {
             if (signatureAlgorithm == null) {
                 val result = Intent()
                 result.putExtra("PIV_ERROR", "unsupported.algorithm.error")
-                return Pair(Activity.RESULT_OK, result)
-            }
+                Pair(Activity.RESULT_OK, result)
+            } else {
+                val signature = pivSession.sign(
+                    Slot.fromValue(slot),
+                    KeyType.fromValue(keyType),
+                    message,
+                    signatureAlgorithm,
+                )
 
-            val signature = pivSession.sign(
-                Slot.fromValue(slot),
-                KeyType.fromValue(keyType),
-                message,
-                signatureAlgorithm,
-            )
-            Log.d(TAG, "Signature generated")
-            val result = Intent()
-            result.putExtra("PIV_RESULT", signature)
-            return Pair(Activity.RESULT_OK, result)
-        } catch (e: Exception) {
-            commandState.cancel()
-            Log.e(TAG, "Something went wrong", e)
-            val result = Intent()
-            result.putExtra("PIV_ERROR", e.localizedMessage)
-            return Pair(Activity.RESULT_OK, result)
+                Log.d(TAG, "Signature generated")
+                val result = Intent()
+                result.putExtra("PIV_RESULT", signature)
+                Pair(Activity.RESULT_OK, result)
+            }
         }
     }
 

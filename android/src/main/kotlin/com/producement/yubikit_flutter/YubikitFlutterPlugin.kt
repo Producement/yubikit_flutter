@@ -9,6 +9,7 @@ import com.producement.yubikit_flutter.piv.*
 import com.producement.yubikit_flutter.piv.PivDecryptAction.Companion.pivDecryptIntent
 import com.producement.yubikit_flutter.piv.PivGenerateAction.Companion.pivGenerateIntent
 import com.producement.yubikit_flutter.piv.PivSignAction.Companion.pivSignIntent
+import com.producement.yubikit_flutter.smartcard.SmartCardAction
 import com.yubico.yubikit.piv.KeyType
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -44,6 +45,7 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
         private const val PUT_CERTIFICATE_REQUEST = 8
         private const val SECRET_KEY_REQUEST = 9
         private const val SERIAL_NUMBER_REQUEST = 10
+        private const val SMART_CARD_COMMAND_REQUEST = 11
     }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -56,6 +58,14 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         Log.d(TAG, "Method ${call.method} called")
         when (call.method) {
+            "smartCardCommand" -> {
+                val arguments = call.arguments<List<Any>>()
+                val apdu = arguments[0] as ByteArray
+                val application = arguments[1] as ByteArray
+                val intent = SmartCardAction.sendCommandIntent(context, apdu, application)
+                observeResponse(result)
+                activity.startActivityForResult(intent, SMART_CARD_COMMAND_REQUEST)
+            }
             "pivSerialNumber" -> {
                 val intent = PivSerialNumberAction.pivSerialNumberIntent(context)
                 observeResponse(result)
@@ -268,7 +278,7 @@ class YubikitFlutterPlugin : FlutterPlugin, MethodCallHandler, ActivityAware,
             } else {
                 when (requestCode) {
                     SIGNATURE_REQUEST, DECRYPT_REQUEST, GENERATE_REQUEST,
-                    GET_CERTIFICATE_REQUEST, SECRET_KEY_REQUEST -> responseData.postValue(
+                    GET_CERTIFICATE_REQUEST, SECRET_KEY_REQUEST, SMART_CARD_COMMAND_REQUEST -> responseData.postValue(
                         kotlin.Result.success(
                             data.getByteArrayExtra("PIV_RESULT")
                         )
