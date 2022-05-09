@@ -11,14 +11,14 @@ import com.yubico.yubikit.core.smartcard.SmartCardProtocol
 import com.yubico.yubikit.core.util.Pair
 
 
-class SmartCardAction : SmartCardConnectionAction() {
+class SmartCardSelectAction : SmartCardConnectionAction() {
     companion object {
-        private const val TAG = "SmartCardAction"
-        fun sendCommandIntent(context: Context, apdu: ByteArray): Intent {
+        private const val TAG = "SmartCardSelectAction"
+        fun selectIntent(context: Context, application: ByteArray): Intent {
             Log.d(TAG, "Creating intent")
-            return YubiKeyPromptActivity.createIntent(context, SmartCardAction::class.java)
+            return YubiKeyPromptActivity.createIntent(context, SmartCardSelectAction::class.java)
                 .also {
-                    it.putExtra("SC_APDU", apdu)
+                    it.putExtra("SC_APPLICATION", application)
                 }
         }
     }
@@ -29,9 +29,10 @@ class SmartCardAction : SmartCardConnectionAction() {
         commandState: CommandState
     ): Pair<Int, Intent> {
         return tryWithCommand(commandState) {
-            val apdu = extras.getByteArray("SC_APDU")!!
-            val apduResult = connection.sendAndReceive(apdu)
-            result(apduResult)
+            val application = extras.getByteArray("SC_APPLICATION")!!
+            val protocol = SmartCardProtocol(connection)
+            protocol.select(application)
+            result(protocol.select(application))
         }
     }
 }

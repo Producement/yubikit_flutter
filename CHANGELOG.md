@@ -1,3 +1,7 @@
+## 0.0.4
+
+* Added some OpenPGP methods.
+
 ## 0.0.3
 
 * Added raw smartcard interface.

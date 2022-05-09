@@ -1,6 +1,5 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:yubikit_flutter/piv/piv_session.dart';
 import 'package:yubikit_flutter/yubikit_flutter.dart';
 
 void main() {
@@ -22,7 +21,8 @@ void main() {
   });
 
   test('reset', () async {
-    YubikitFlutterPivSession pivSession = YubikitFlutter.pivSession();
+    var yubikitFlutter = YubikitFlutter.connect();
+    var pivSession = yubikitFlutter.pivSession();
     await pivSession.reset();
   });
 }

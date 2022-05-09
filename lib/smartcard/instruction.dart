@@ -11,6 +11,7 @@ enum Instruction {
   getAttestation,
   sendRemaining,
   selectData,
+  performSecurityOperation,
 }
 
 extension InstructionValue on Instruction {
@@ -40,6 +41,8 @@ extension InstructionValue on Instruction {
         return 0xC0;
       case Instruction.selectData:
         return 0xA5;
+      case Instruction.performSecurityOperation:
+        return 0x2A;
     }
   }
 }

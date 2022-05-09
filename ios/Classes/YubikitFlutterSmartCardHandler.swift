@@ -34,19 +34,18 @@ public class YubikitFlutterSmartCardHandler {
                 result(data)
             })
         }
+    
         
         switch(call.method) {
-            case "smartCardCommand":
-            let apdu: FlutterStandardTypedData = argument(0)
-            let application: FlutterStandardTypedData = argument(1)
-            self.logger.debug("Received command: \(apdu.data.hexadecimalString)")
-            yubiKeyConnection.connection { connection in
-                guard let smartCardInterface = connection.smartCardInterface else {
-                    self.logger.error("Smart card interface not present!")
-                    result(FlutterError(code: "smart.card.error", message: "Smart card not present", details: ""))
-                    return
-                }
-                if(application.elementCount > 0) {
+            case "smartCardSelectApplication":
+                let application: FlutterStandardTypedData = argument(0)
+                self.logger.debug("Received select command: \(application.data.hexDescription)")
+                yubiKeyConnection.connection { connection in
+                    guard let smartCardInterface = connection.smartCardInterface else {
+                        self.logger.error("Smart card interface not present!")
+                        result(FlutterError(code: "smart.card.error", message: "Smart card not present", details: ""))
+                        return
+                    }
                     guard let applicationApdu = YKFSelectApplicationAPDU(cla: 0x00, ins: 0xA4, p1: 0x04, p2: 0x00, data: application.data, type: .short) else {
                         self.logger.error("Failed to construct application APDU")
                         result(FlutterError(code: "smart.card.error", message: "Application APDU invalid", details: ""))
@@ -54,16 +53,45 @@ public class YubikitFlutterSmartCardHandler {
                     }
                     smartCardInterface.selectApplication(applicationApdu) { data, error in
                         if error != nil {
-                            self.logger.error("Failed to execute smart card select application command: \(error!.localizedDescription)")
-                            result(FlutterError(code: "smart.card.error", message: "\(error!.localizedDescription)", details: ""))
-                            return
+                            self.logger.error("Failed to select application, trying to activate: \(error!.localizedDescription)")
+                            guard let activateApdu = YKFAPDU(cla: 0x00, ins: 0x44, p1: 0x00, p2: 0x00, data:Data(), type: .short) else {
+                                self.logger.error("Failed to construct activate APDU")
+                                result(FlutterError(code: "smart.card.error", message: "Activate APDU invalid", details: ""))
+                                return
+                            }
+                            smartCardInterface.executeCommand(activateApdu, completion: { data, error in
+                                if error != nil {
+                                    self.logger.error("Failed to execute smart card command: \(error!.localizedDescription)")
+                                    result(FlutterError(code: "smart.card.error", message: "\(error!.localizedDescription)", details: ""))
+                                    return
+                                }
+                                self.logger.info("Smart card activation executed")
+                                smartCardInterface.selectApplication(applicationApdu) { data, error in
+                                    if error != nil {
+                                        self.logger.error("Failed to execute smart card select application command: \(error!.localizedDescription)")
+                                        result(FlutterError(code: "smart.card.error", message: "\(error!.localizedDescription)", details: ""))
+                                        return
+                                    }
+                                }
+                                result(nil)
+                            })
+                        } else {
+                            result(nil)
                         }
-                        runCommand(smartCardInterface: smartCardInterface, data: apdu.data)
+                        
                     }
-                } else {
+                }
+            case "smartCardCommand":
+                let apdu: FlutterStandardTypedData = argument(0)
+                self.logger.debug("Received command: \(apdu.data.hexDescription)")
+                yubiKeyConnection.connection { connection in
+                    guard let smartCardInterface = connection.smartCardInterface else {
+                        self.logger.error("Smart card interface not present!")
+                        result(FlutterError(code: "smart.card.error", message: "Smart card not present", details: ""))
+                        return
+                    }
                     runCommand(smartCardInterface: smartCardInterface, data: apdu.data)
                 }
-            }
             default:
                 return false
         }
@@ -72,16 +100,13 @@ public class YubikitFlutterSmartCardHandler {
 }
 
 private extension Data {
-    var hexadecimalString: String {
-        let charA: UInt8 = 0x61
-        let char0: UInt8 = 0x30
-        func byteToChar(_ b: UInt8) -> Character {
-            Character(UnicodeScalar(b > 9 ? charA + b - 10 : char0 + b))
-        }
-        let hexChars = flatMap {[
-            byteToChar(($0 >> 4) & 0xF),
-            byteToChar($0 & 0xF)
-        ]}
-        return String(hexChars)
+    var hexDescription: String {
+        return reduce("") {$0 + String(format: "%02x", $1)}
+    }
+    
+    var bytes: [UInt8] {
+        var byteArray = [UInt8](repeating: 0, count: self.count)
+        self.copyBytes(to: &byteArray, count: self.count)
+        return byteArray
     }
 }

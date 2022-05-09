@@ -18,11 +18,22 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
         let pivHandler = YubikitFlutterPivHandler(yubiKeyConnection: yubiKeyConnection)
         let smartCardHandler = YubikitFlutterSmartCardHandler(yubiKeyConnection: yubiKeyConnection)
         if(pivHandler.handle(call, result: result)) {
+            logger.info("PIV handled")
             return
         } else if(smartCardHandler.handle(call, result: result)) {
+            logger.info("Smart Card handled")
             return
         } else {
-            result(FlutterMethodNotImplemented)
+            switch(call.method) {
+                case "start":
+                    yubiKeyConnection.start()
+                    result(nil)
+                case "stop":
+                    yubiKeyConnection.stop()
+                    result(nil)
+                default:
+                    result(FlutterMethodNotImplemented)
+            }
         }
     }
 

@@ -17,7 +17,7 @@ class YubiKeyConnection: NSObject {
     override init() {
         super.init()
         YubiKitManager.shared.delegate = self
-        YubiKitManager.shared.startAccessoryConnection()
+        start()
     }
     
     func connection(completion: @escaping (_ connection: YKFConnectionProtocol) -> Void) {
@@ -32,6 +32,22 @@ class YubiKeyConnection: NSObject {
             YubiKitManager.shared.startNFCConnection()
         }
     }
+    
+    func start() {
+        logger.info("Starting accessory connection")
+        YubiKitManager.shared.startAccessoryConnection()
+    }
+    
+    func stop() {
+        logger.info("Stopping connection")
+        if nfcConnection != nil {
+            YubiKitManager.shared.stopNFCConnection()
+            Thread.sleep(forTimeInterval: 4.0) // Approximate time it takes for the NFC modal to dismiss
+        }
+        if accessoryConnection != nil {
+            YubiKitManager.shared.stopAccessoryConnection()
+        }
+    }
 }
 
 extension YubiKeyConnection: YKFManagerDelegate {
@@ -39,10 +55,6 @@ extension YubiKeyConnection: YKFManagerDelegate {
        logger.info("NFC connected")
        nfcConnection = connection
         if let callback = connectionCallback {
-            defer {
-                self.logger.info("Closing NFC connection")
-                connection.stop()
-            }
             callback(connection)
             logger.info("NFC connection callback completed")
         }

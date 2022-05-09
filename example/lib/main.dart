@@ -2,16 +2,20 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:convert/convert.dart';
+import 'package:yubikit_flutter/openpgp/info.dart';
+import 'package:yubikit_flutter/openpgp/curve.dart';
+import 'package:yubikit_flutter/openpgp/keyslot.dart';
+import 'package:yubikit_flutter/openpgp/session.dart';
 import 'package:yubikit_flutter/piv/piv_key_algorithm.dart';
 import 'package:yubikit_flutter/piv/piv_key_type.dart';
 import 'package:yubikit_flutter/piv/piv_management_key_type.dart';
 import 'package:yubikit_flutter/piv/piv_pin_policy.dart';
 import 'package:yubikit_flutter/piv/piv_session.dart';
-import 'package:yubikit_flutter/smartcard/smartcard_application.dart';
-import 'package:yubikit_flutter/smartcard/smartcard_instruction.dart';
-
 import 'package:yubikit_flutter/piv/piv_slot.dart';
 import 'package:yubikit_flutter/piv/piv_touch_policy.dart';
+import 'package:yubikit_flutter/smartcard/application.dart';
+import 'package:yubikit_flutter/smartcard/instruction.dart';
 import 'package:yubikit_flutter/yubikit_flutter.dart';
 
 void main() {
@@ -29,15 +33,18 @@ class _MyAppState extends State<MyApp> {
   Uint8List? signature;
   Uint8List? publicKey;
   late Uint8List data;
+  late YubikitFlutter yubikitFlutter;
 
   @override
   void initState() {
     super.initState();
     data = Uint8List.fromList("Hello World".codeUnits);
+    yubikitFlutter = YubikitFlutter.connect();
   }
 
   @override
   void dispose() {
+    yubikitFlutter.stop();
     super.dispose();
   }
 
@@ -64,7 +71,8 @@ class _MyAppState extends State<MyApp> {
           children: [
             ElevatedButton(
                 onPressed: () async => {
-                      setSignature(await YubikitFlutter.pivSession()
+                      setSignature(await yubikitFlutter
+                          .pivSession()
                           .signWithKey(
                               YKFPIVSlot.signature,
                               YKFPIVKeyType.rsa2048,
@@ -76,7 +84,8 @@ class _MyAppState extends State<MyApp> {
                 child: const Text("Sign")),
             ElevatedButton(
                 onPressed: () async => {
-                      setPublicKey(await YubikitFlutter.pivSession()
+                      setPublicKey(await yubikitFlutter
+                          .pivSession()
                           .generateKey(
                               YKFPIVSlot.signature,
                               YKFPIVKeyType.rsa2048,
@@ -90,7 +99,8 @@ class _MyAppState extends State<MyApp> {
                 child: const Text("Generate key")),
             ElevatedButton(
                 onPressed: () async {
-                  Uint8List? decryptedData = await YubikitFlutter.pivSession()
+                  Uint8List? decryptedData = await yubikitFlutter
+                      .pivSession()
                       .decryptWithKey(
                           YKFPIVSlot.signature,
                           YKFPIVKeyAlgorithm.rsaEncryptionPKCS1,
@@ -103,7 +113,8 @@ class _MyAppState extends State<MyApp> {
                 child: const Text("Decrypt data")),
             ElevatedButton(
                 onPressed: () async {
-                  Uint8List encryptedData = await YubikitFlutter.pivSession()
+                  Uint8List encryptedData = await yubikitFlutter
+                      .pivSession()
                       .encryptWithKey(YKFPIVKeyType.rsa2048, publicKey!, data);
                   setState(() {
                     data = encryptedData;
@@ -112,7 +123,7 @@ class _MyAppState extends State<MyApp> {
                 child: const Text("Encrypt data")),
             ElevatedButton(
                 onPressed: () async {
-                  await YubikitFlutter.pivSession().reset();
+                  await yubikitFlutter.pivSession().reset();
                   setState(() {
                     publicKey = null;
                     signature = null;
@@ -122,9 +133,14 @@ class _MyAppState extends State<MyApp> {
                 child: const Text("Reset")),
             ElevatedButton(
                 onPressed: () async {
-                  Uint8List data = await YubikitFlutter.smartCardSession()
+                  await yubikitFlutter.start();
+                  await yubikitFlutter
+                      .smartCardSession()
+                      .selectApplication(Application.openpgp);
+                  Uint8List data = await yubikitFlutter
+                      .smartCardSession()
                       .sendApdu(0x00, Instruction.getVersion, 0x00, 0x00,
-                          Uint8List.fromList([]), Application.openpgp);
+                          Uint8List.fromList([]));
                   String version = data[0].toString() +
                       "." +
                       data[1].toString() +
@@ -146,6 +162,43 @@ class _MyAppState extends State<MyApp> {
                   );
                 },
                 child: const Text("Application version(APDU)")),
+            ElevatedButton(
+                onPressed: () async {
+                  OpenPGPInfo.showOpenPGPInfo(
+                      context, yubikitFlutter.openPGPSession());
+                },
+                child: const Text("OpenPGP info")),
+            ElevatedButton(
+                onPressed: () async {
+                  var session = yubikitFlutter.openPGPSession();
+                  await session.verifyAdmin(
+                      YubikitFlutterOpenPGPSession.defaultAdminPin);
+                  var pubKey = await session.generateECKey(
+                      KeySlot.signature, ECCurve.ed25519);
+                  debugPrint(pubKey);
+                },
+                child: const Text("OpenPGP generate")),
+            ElevatedButton(
+                onPressed: () async {
+                  var session = yubikitFlutter.openPGPSession();
+                  await session.verifyAdmin(
+                      YubikitFlutterOpenPGPSession.defaultAdminPin);
+                  var pubKey = await session.getECPublicKey(
+                      KeySlot.signature, ECCurve.ed25519);
+                  debugPrint(pubKey);
+                },
+                child: const Text("OpenPGP pubKey")),
+            ElevatedButton(
+                onPressed: () async {
+                  var session = yubikitFlutter.openPGPSession();
+                  await session
+                      .verifyPin(YubikitFlutterOpenPGPSession.defaultPin);
+                  var signature = await session.sign(Uint8List.fromList(
+                      "eyJhbGciOiJFZERTQSJ9.eyJleHAiOjE2NTE4MzE0NjksImlhdCI6MTY1MTgyOTY2OSwiYXV0aG9yaXRpZXMiOlsiUk9MRV9VU0VSIl19"
+                          .codeUnits));
+                  debugPrint(base64.encode(signature));
+                },
+                child: const Text("OpenPGP sign")),
             Text("Signature: " + (base64.encode(signature ?? []))),
             Text("Public key: " + (base64.encode(publicKey ?? []))),
             Text("Data: " + String.fromCharCodes(data)),
