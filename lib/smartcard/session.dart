@@ -5,17 +5,25 @@ import 'package:yubikit_flutter/smartcard/application.dart';
 import 'package:yubikit_flutter/smartcard/instruction.dart';
 
 class YubikitFlutterSmartCardSession {
-  final MethodChannel _channel;
+  static const MethodChannel _channel = MethodChannel('yubikit_flutter_sc');
 
-  YubikitFlutterSmartCardSession(this._channel);
+  YubikitFlutterSmartCardSession();
+
+  Future<void> start() async {
+    await _channel.invokeMethod("start");
+  }
+
+  Future<void> stop() async {
+    await _channel.invokeMethod("stop");
+  }
 
   Future<Uint8List> sendCommand(Uint8List command) async {
-    return await _channel.invokeMethod("smartCardCommand", [command]);
+    return await _channel.invokeMethod("sendCommand", [command]);
   }
 
   Future<void> selectApplication(Application application) async {
     return await _channel
-        .invokeMethod("smartCardSelectApplication", [application.value]);
+        .invokeMethod("selectApplication", [application.value]);
   }
 
   Future<Uint8List> sendApdu(

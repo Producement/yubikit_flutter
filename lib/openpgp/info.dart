@@ -18,7 +18,7 @@ class OpenPGPInfo extends StatelessWidget {
       {Key? key})
       : super(key: key);
 
-  static void showOpenPGPInfo(
+  static Future<void> showOpenPGPInfo(
       BuildContext context, YubikitFlutterOpenPGPSession openPGPSession) async {
     Tuple2 openPGPVersion = await openPGPSession.getOpenPGPVersion();
     Tuple3 applicationVersion = await openPGPSession.getApplicationVersion();

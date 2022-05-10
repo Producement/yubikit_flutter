@@ -36,6 +36,7 @@ class YubiKeyConnection: NSObject {
     func start() {
         logger.info("Starting accessory connection")
         YubiKitManager.shared.startAccessoryConnection()
+        Thread.sleep(forTimeInterval: 1.0) // Wait for accessory connection to initialize
     }
     
     func stop() {

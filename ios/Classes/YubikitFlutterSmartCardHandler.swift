@@ -37,7 +37,7 @@ public class YubikitFlutterSmartCardHandler {
     
         
         switch(call.method) {
-            case "smartCardSelectApplication":
+            case "selectApplication":
                 let application: FlutterStandardTypedData = argument(0)
                 self.logger.debug("Received select command: \(application.data.hexDescription)")
                 yubiKeyConnection.connection { connection in
@@ -81,7 +81,7 @@ public class YubikitFlutterSmartCardHandler {
                         
                     }
                 }
-            case "smartCardCommand":
+            case "sendCommand":
                 let apdu: FlutterStandardTypedData = argument(0)
                 self.logger.debug("Received command: \(apdu.data.hexDescription)")
                 yubiKeyConnection.connection { connection in

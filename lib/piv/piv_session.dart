@@ -40,9 +40,15 @@ class YubikitFlutterPivSession {
     0x08
   ];
 
-  final MethodChannel _channel;
+  static const MethodChannel _channel = MethodChannel('yubikit_flutter_piv');
 
-  YubikitFlutterPivSession(this._channel);
+  Future<void> start() async {
+    await _channel.invokeMethod("start");
+  }
+
+  Future<void> stop() async {
+    await _channel.invokeMethod("stop");
+  }
 
   Future<Uint8List> generateKey(
       YKFPIVSlot slot,

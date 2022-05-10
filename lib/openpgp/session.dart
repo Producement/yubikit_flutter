@@ -28,7 +28,12 @@ class YubikitFlutterOpenPGPSession {
   }
 
   YubikitFlutterOpenPGPSession(this._smartCardSession) {
+    _smartCardSession.start();
     _smartCardSession.selectApplication(Application.openpgp);
+  }
+
+  void stop() async {
+    await _smartCardSession.stop();
   }
 
   Uint8List _formatECAttributes(KeySlot keySlot, ECCurve curve) {
@@ -43,7 +48,7 @@ class YubikitFlutterOpenPGPSession {
     return Uint8List.fromList([algorithm].followedBy(curve.oid).toList());
   }
 
-  Future<String> generateECKey(KeySlot keySlot, ECCurve curve) async {
+  Future<Uint8List> generateECKey(KeySlot keySlot, ECCurve curve) async {
     requireVersion(5, 2, 0);
     Uint8List attributes = _formatECAttributes(keySlot, curve);
     _setData(keySlot.keyId, attributes);
@@ -55,14 +60,14 @@ class YubikitFlutterOpenPGPSession {
         keySlot.fingerprint,
         Uint8List.fromList(FingerprintCalculator.calculateFingerprint(
             BigInt.parse(hex.encode(publicKey), radix: 16), curve)));
-    return base64.encode(publicKey);
+    return publicKey;
   }
 
-  Future<String> getECPublicKey(KeySlot keySlot, ECCurve curveName) async {
+  Future<Uint8List> getECPublicKey(KeySlot keySlot, ECCurve curveName) async {
     Uint8List response = await _smartCardSession.sendApdu(
         0x00, Instruction.generateAsym, 0x81, 0x00, keySlot.crt);
     TlvData data = TlvData.parse(response).get(0x7F49);
-    return base64.encode(data.getValue(0x86));
+    return data.getValue(0x86);
   }
 
   Future<Uint8List> sign(Uint8List data) async {

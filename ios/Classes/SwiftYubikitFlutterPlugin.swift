@@ -5,18 +5,28 @@ import OSLog
 import YubiKit
 
 public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
-    public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "yubikit_flutter", binaryMessenger: registrar.messenger())
-        let instance = SwiftYubikitFlutterPlugin()
-        registrar.addMethodCallDelegate(instance, channel: channel)
-    }
-    
     let logger = Logger()
     let yubiKeyConnection = YubiKeyConnection()
+    let pivHandler: YubikitFlutterPivHandler
+    let smartCardHandler: YubikitFlutterSmartCardHandler
+    
+    public override init() {
+        pivHandler = YubikitFlutterPivHandler(yubiKeyConnection: yubiKeyConnection)
+        smartCardHandler = YubikitFlutterSmartCardHandler(yubiKeyConnection: yubiKeyConnection)
+        super.init()
+    }
+    
+    public static func register(with registrar: FlutterPluginRegistrar) {
+        let pivChannel = FlutterMethodChannel(name: "yubikit_flutter_piv", binaryMessenger: registrar.messenger())
+        let instance = SwiftYubikitFlutterPlugin()
+        let smartCardChannel = FlutterMethodChannel(name: "yubikit_flutter_sc", binaryMessenger: registrar.messenger())
+        
+        registrar.addMethodCallDelegate(instance, channel: pivChannel)
+        registrar.addMethodCallDelegate(instance, channel: smartCardChannel)
+    }
+
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
-        let pivHandler = YubikitFlutterPivHandler(yubiKeyConnection: yubiKeyConnection)
-        let smartCardHandler = YubikitFlutterSmartCardHandler(yubiKeyConnection: yubiKeyConnection)
         if(pivHandler.handle(call, result: result)) {
             logger.info("PIV handled")
             return

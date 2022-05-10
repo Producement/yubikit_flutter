@@ -21,8 +21,7 @@ void main() {
   });
 
   test('reset', () async {
-    var yubikitFlutter = YubikitFlutter.connect();
-    var pivSession = yubikitFlutter.pivSession();
+    var pivSession = YubikitFlutter.pivSession();
     await pivSession.reset();
   });
 }

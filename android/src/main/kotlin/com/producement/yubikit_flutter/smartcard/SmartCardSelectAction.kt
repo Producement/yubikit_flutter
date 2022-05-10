@@ -31,7 +31,6 @@ class SmartCardSelectAction : SmartCardConnectionAction() {
         return tryWithCommand(commandState) {
             val application = extras.getByteArray("SC_APPLICATION")!!
             val protocol = SmartCardProtocol(connection)
-            protocol.select(application)
             result(protocol.select(application))
         }
     }
