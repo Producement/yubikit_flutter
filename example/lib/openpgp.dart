@@ -97,6 +97,24 @@ class _OpenPGPPageState extends State<OpenPGPPage> {
           Text("Signature: " + (base64.encode(signature ?? []))),
           Text("Public key: " + (base64.encode(publicKey ?? []))),
           Text("Data: " + String.fromCharCodes(data)),
+          StreamBuilder(
+              stream: YubikitFlutter.eventStream(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Text(snapshot.error.toString());
+                } else {
+                  switch (snapshot.connectionState) {
+                    case ConnectionState.none:
+                      return const CircularProgressIndicator();
+                    case ConnectionState.waiting:
+                      return const CircularProgressIndicator();
+                    case ConnectionState.active:
+                      return Text("Device state: ${snapshot.data}");
+                    case ConnectionState.done:
+                      return Column();
+                  }
+                }
+              }),
         ],
       ),
     );

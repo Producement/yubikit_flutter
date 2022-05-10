@@ -1,3 +1,7 @@
+## 0.0.5
+
+* Added Yubikey connection status stream.
+
 ## 0.0.4
 
 * Added some OpenPGP methods.

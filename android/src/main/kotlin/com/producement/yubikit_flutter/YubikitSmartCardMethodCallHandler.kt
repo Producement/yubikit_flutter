@@ -13,6 +13,7 @@ import com.yubico.yubikit.core.util.Result
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.IOException
@@ -22,7 +23,8 @@ import java.util.concurrent.TimeUnit
 fun ByteArray.toHex(): String =
     joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
 
-class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, ActivityAware {
+class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, ActivityAware,
+    EventChannel.StreamHandler {
 
     private val workQueue = LinkedBlockingQueue<SmartCardTask>()
 
@@ -34,7 +36,8 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
     private lateinit var activity: FlutterActivity
     private val nfcConfiguration = NfcConfiguration()
     private val yubiKeyDevice: MutableLiveData<YubiKeyDevice?> = MutableLiveData()
-    private var discoveryEnabled = false
+    private var nfcDiscoveryEnabled = false
+    private var eventSink: MutableLiveData<EventChannel.EventSink?> = MutableLiveData()
 
     sealed class SmartCardTask(private val result: MethodChannel.Result) {
         fun doWithConnection(
@@ -88,7 +91,7 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
         when (call.method) {
             "start" -> {
                 Log.d(TAG, "Starting connection")
-                startDiscovery()
+                startNfcDiscovery()
                 yubiKeyDevice.observe(activity) { device ->
                     if (device != null) {
                         Log.d(TAG, "Received device")
@@ -118,7 +121,7 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
             "stop" -> {
                 Log.d(TAG, "Stop connection")
                 workQueue.add(CloseConnection(result))
-                stopDiscovery()
+                yubiKitManager.stopNfcDiscovery(activity)
             }
             "sendCommand" -> {
                 val arguments = call.arguments<List<Any>>()
@@ -140,19 +143,22 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
 
     private fun startDiscovery() {
         Log.d(TAG, "Starting discovery")
-        discoveryEnabled = true
         yubiKitManager.startUsbDiscovery(UsbConfiguration()) { device ->
             Log.d(TAG, "USB device connected")
             yubiKeyDevice.postValue(device)
+            eventSink.value?.success("deviceConnected")
             device.setOnClosed {
                 Log.d(TAG, "USB device disconnected")
+                activity.runOnUiThread {
+                    eventSink.value?.success("deviceDisconnected")
+                }
                 yubiKeyDevice.postValue(null)
             }
         }
-        startNfcDiscovery()
     }
 
     private fun startNfcDiscovery() {
+        nfcDiscoveryEnabled = true
         Log.d(TAG, "Starting NFC discovery")
         try {
             yubiKitManager.startNfcDiscovery(nfcConfiguration, activity) { device ->
@@ -161,7 +167,9 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
                     // Trigger new value, then removal
                     activity.runOnUiThread {
                         value = device
+                        eventSink.value?.success("deviceConnected")
                         yubiKeyDevice.postValue(null)
+                        eventSink.value?.success("deviceDisconnected")
                     }
                 }
             }
@@ -172,7 +180,7 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
 
     private fun stopDiscovery() {
         Log.d(TAG, "Stopping discovery")
-        discoveryEnabled = false
+        nfcDiscoveryEnabled = false
         yubiKeyDevice.value = null
         yubiKitManager.stopNfcDiscovery(activity)
         yubiKitManager.stopUsbDiscovery()
@@ -181,7 +189,7 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         activity = binding.activity as FlutterActivity
         yubiKitManager = YubiKitManager(activity)
-
+        startDiscovery()
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -190,12 +198,20 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         activity = binding.activity as FlutterActivity
-        if (discoveryEnabled) {
+        if (nfcDiscoveryEnabled) {
             startNfcDiscovery()
         }
     }
 
     override fun onDetachedFromActivity() {
         stopDiscovery()
+    }
+
+    override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+        eventSink.postValue(events)
+    }
+
+    override fun onCancel(arguments: Any?) {
+        eventSink.postValue(null)
     }
 }

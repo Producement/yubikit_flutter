@@ -5,6 +5,7 @@ import androidx.annotation.NonNull
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 
 
@@ -13,6 +14,7 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware {
     private lateinit var smartCardChannel: MethodChannel
     private lateinit var smartCardMethodHandler: YubikitSmartCardMethodCallHandler
     private lateinit var pivMethodHandler: YubikitPivMethodCallHandler
+    private lateinit var eventChannel: EventChannel
 
     companion object {
         private const val TAG = "YubikitFlutter"
@@ -27,6 +29,9 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware {
         smartCardChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "yubikit_flutter_sc")
         smartCardMethodHandler = YubikitSmartCardMethodCallHandler()
         smartCardChannel.setMethodCallHandler(smartCardMethodHandler)
+
+        eventChannel = EventChannel(flutterPluginBinding.binaryMessenger, "yubikit_flutter_status")
+        eventChannel.setStreamHandler(smartCardMethodHandler)
     }
 
 
@@ -59,6 +64,5 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware {
         smartCardMethodHandler.onDetachedFromActivity()
         pivMethodHandler.onDetachedFromActivity()
     }
-
 
 }

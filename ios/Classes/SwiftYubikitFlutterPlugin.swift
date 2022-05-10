@@ -6,11 +6,12 @@ import YubiKit
 
 public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
     let logger = Logger()
-    let yubiKeyConnection = YubiKeyConnection()
+    let yubiKeyConnection:YubiKeyConnection
     let pivHandler: YubikitFlutterPivHandler
     let smartCardHandler: YubikitFlutterSmartCardHandler
     
     public override init() {
+        yubiKeyConnection = YubiKeyConnection()
         pivHandler = YubikitFlutterPivHandler(yubiKeyConnection: yubiKeyConnection)
         smartCardHandler = YubikitFlutterSmartCardHandler(yubiKeyConnection: yubiKeyConnection)
         super.init()
@@ -20,6 +21,9 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
         let pivChannel = FlutterMethodChannel(name: "yubikit_flutter_piv", binaryMessenger: registrar.messenger())
         let instance = SwiftYubikitFlutterPlugin()
         let smartCardChannel = FlutterMethodChannel(name: "yubikit_flutter_sc", binaryMessenger: registrar.messenger())
+        
+        let eventChannel = FlutterEventChannel(name: "yubikit_flutter_status", binaryMessenger: registrar.messenger())
+        eventChannel.setStreamHandler(instance.yubiKeyConnection)
         
         registrar.addMethodCallDelegate(instance, channel: pivChannel)
         registrar.addMethodCallDelegate(instance, channel: smartCardChannel)
