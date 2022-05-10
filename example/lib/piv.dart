@@ -2,13 +2,13 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:yubikit_flutter/piv/piv_key_algorithm.dart';
-import 'package:yubikit_flutter/piv/piv_key_type.dart';
-import 'package:yubikit_flutter/piv/piv_management_key_type.dart';
-import 'package:yubikit_flutter/piv/piv_pin_policy.dart';
-import 'package:yubikit_flutter/piv/piv_session.dart';
-import 'package:yubikit_flutter/piv/piv_slot.dart';
-import 'package:yubikit_flutter/piv/piv_touch_policy.dart';
+import 'package:yubikit_flutter/piv/key_algorithm.dart';
+import 'package:yubikit_flutter/piv/key_type.dart';
+import 'package:yubikit_flutter/piv/management_key_type.dart';
+import 'package:yubikit_flutter/piv/pin_policy.dart';
+import 'package:yubikit_flutter/piv/session.dart';
+import 'package:yubikit_flutter/piv/slot.dart';
+import 'package:yubikit_flutter/piv/touch_policy.dart';
 import 'package:yubikit_flutter/yubikit_flutter.dart';
 
 class PivPage extends StatefulWidget {

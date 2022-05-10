@@ -1,7 +1,7 @@
 import 'package:yubikit_flutter/openpgp/session.dart';
 import 'package:yubikit_flutter/smartcard/session.dart';
 
-import 'piv/piv_session.dart';
+import 'piv/session.dart';
 
 class YubikitFlutter {
   static YubikitFlutterPivSession pivSession() {

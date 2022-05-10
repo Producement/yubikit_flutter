@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
-import 'package:yubikit_flutter/piv/piv_key_algorithm.dart';
-import 'package:yubikit_flutter/piv/piv_key_type.dart';
-import 'package:yubikit_flutter/piv/piv_management_key_type.dart';
-import 'package:yubikit_flutter/piv/piv_pin_policy.dart';
-import 'package:yubikit_flutter/piv/piv_touch_policy.dart';
+import 'package:yubikit_flutter/piv/key_algorithm.dart';
+import 'package:yubikit_flutter/piv/key_type.dart';
+import 'package:yubikit_flutter/piv/management_key_type.dart';
+import 'package:yubikit_flutter/piv/pin_policy.dart';
+import 'package:yubikit_flutter/piv/touch_policy.dart';
 
-import 'piv_slot.dart';
+import 'slot.dart';
 
 class YubikitFlutterPivSession {
   static const defaultPin = "123456";
