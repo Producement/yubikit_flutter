@@ -56,7 +56,7 @@ packages:
       name: crypto
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.2"
+    version: "3.0.1"
   cupertino_icons:
     dependency: "direct main"
     description:
@@ -71,6 +71,20 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.2.0"
+  ffi:
+    dependency: transitive
+    description:
+      name: ffi
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "1.1.2"
+  flat_buffers:
+    dependency: transitive
+    description:
+      name: flat_buffers
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "2.0.5"
   flutter:
     dependency: "direct main"
     description: flutter
@@ -88,13 +102,18 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_web_plugins:
+    dependency: transitive
+    description: flutter
+    source: sdk
+    version: "0.0.0"
   js:
     dependency: transitive
     description:
       name: js
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.6.4"
+    version: "0.6.3"
   lints:
     dependency: transitive
     description:
@@ -123,6 +142,13 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.7.0"
+  openpgp:
+    dependency: "direct main"
+    description:
+      name: openpgp
+      url: "https://pub.dartlang.org"
+    source: hosted
+    version: "3.2.8"
   path:
     dependency: transitive
     description:
@@ -130,13 +156,6 @@ packages:
       url: "https://pub.dartlang.org"
     source: hosted
     version: "1.8.0"
-  pointycastle:
-    dependency: transitive
-    description:
-      name: pointycastle
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "3.6.0"
   quiver:
     dependency: transitive
     description:

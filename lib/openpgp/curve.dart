@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:pointycastle/asn1.dart';
-
 enum ECCurve {
   secp256r1,
   secp256k1,
@@ -64,29 +62,6 @@ extension ECCurveValues on ECCurve {
         return 19;
       case ECCurve.ed25519:
         return 22;
-    }
-  }
-
-  ASN1ObjectIdentifier get identifier {
-    switch (this) {
-      case ECCurve.secp256k1:
-        return ASN1ObjectIdentifier([1, 2, 840, 10045, 3, 1, 7]);
-      case ECCurve.secp256r1:
-        return ASN1ObjectIdentifier([1, 3, 132, 0, 10]);
-      case ECCurve.secp384r1:
-        return ASN1ObjectIdentifier([1, 3, 132, 0, 34]);
-      case ECCurve.secp521r1:
-        return ASN1ObjectIdentifier([1, 3, 132, 0, 35]);
-      case ECCurve.ed25519:
-        return ASN1ObjectIdentifier([1, 3, 6, 1, 4, 1, 11591, 15, 1]);
-      case ECCurve.x25519:
-        return ASN1ObjectIdentifier([1, 3, 6, 1, 4, 1, 3029, 1, 5, 1]);
-      case ECCurve.brainpoolp256r1:
-        return ASN1ObjectIdentifier([1, 3, 36, 3, 3, 2, 8, 1, 1, 5]);
-      case ECCurve.brainpoolp384r1:
-        return ASN1ObjectIdentifier([1, 3, 36, 3, 3, 2, 8, 1, 1, 11]);
-      case ECCurve.brainpoolp512r1:
-        return ASN1ObjectIdentifier([1, 3, 36, 3, 3, 2, 8, 1, 1, 13]);
     }
   }
 }

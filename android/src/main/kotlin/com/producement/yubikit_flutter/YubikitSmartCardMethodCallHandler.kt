@@ -209,6 +209,11 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
         eventSink.postValue(events)
+        if (yubiKeyDevice.value != null) {
+            events?.success("deviceConnected")
+        } else {
+            events?.success("deviceDisconnected")
+        }
     }
 
     override fun onCancel(arguments: Any?) {

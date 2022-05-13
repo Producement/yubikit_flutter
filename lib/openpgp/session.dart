@@ -3,7 +3,7 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:crypto/crypto.dart';
 import 'package:tuple/tuple.dart';
-import 'package:yubikit_flutter/openpgp/fingerprint.dart';
+import 'package:yubikit_flutter/openpgp/utils.dart';
 import 'package:yubikit_flutter/openpgp/tlv.dart';
 import 'package:yubikit_flutter/smartcard/session.dart';
 
@@ -47,7 +47,8 @@ class YubikitFlutterOpenPGPSession {
     return Uint8List.fromList([algorithm].followedBy(curve.oid).toList());
   }
 
-  Future<Uint8List> generateECKey(KeySlot keySlot, ECCurve curve) async {
+  Future<Uint8List> generateECKey(KeySlot keySlot, ECCurve curve,
+      [int? timestamp]) async {
     requireVersion(5, 2, 0);
     Uint8List attributes = _formatECAttributes(keySlot, curve);
     _setData(keySlot.keyId, attributes);
@@ -57,16 +58,23 @@ class YubikitFlutterOpenPGPSession {
     Uint8List publicKey = data.getValue(0x86);
     await _setData(
         keySlot.fingerprint,
-        Uint8List.fromList(FingerprintCalculator.calculateFingerprint(
+        Uint8List.fromList(PGPUtils.calculateFingerprint(
             BigInt.parse(hex.encode(publicKey), radix: 16), curve)));
+    timestamp ??= DateTime.now().millisecondsSinceEpoch;
+    var timestampBytes = ByteData(4)..setInt32(0, timestamp);
+    await _setData(keySlot.genTime, timestampBytes.buffer.asUint8List());
     return publicKey;
   }
 
-  Future<Uint8List> getECPublicKey(KeySlot keySlot, ECCurve curveName) async {
-    Uint8List response = await _smartCardSession.sendApdu(
-        0x00, Instruction.generateAsym, 0x81, 0x00, keySlot.crt);
-    TlvData data = TlvData.parse(response).get(0x7F49);
-    return data.getValue(0x86);
+  Future<Uint8List?> getECPublicKey(KeySlot keySlot) async {
+    try {
+      Uint8List response = await _smartCardSession.sendApdu(
+          0x00, Instruction.generateAsym, 0x81, 0x00, keySlot.crt);
+      TlvData data = TlvData.parse(response).get(0x7F49);
+      return data.getValue(0x86);
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<Uint8List> sign(Uint8List data) async {
@@ -77,6 +85,22 @@ class YubikitFlutterOpenPGPSession {
         0x9E,
         0x9A,
         Uint8List.fromList(digest.bytes));
+    return response;
+  }
+
+  Future<Uint8List> ecSharedSecret(Uint8List publicKey) async {
+    print("Packet length: ${publicKey.length}");
+    print(hex.encode(publicKey));
+    List<int> externalPublicKey = [0x86, publicKey.length] + publicKey;
+    List<int> publicKeyDo =
+        [0x7F49, externalPublicKey.length] + externalPublicKey;
+    List<int> cipherDo = [0xA6, publicKeyDo.length] + publicKeyDo;
+    Uint8List response = await _smartCardSession.sendApdu(
+        0x00,
+        Instruction.performSecurityOperation,
+        0x80,
+        0x86,
+        Uint8List.fromList(cipherDo));
     return response;
   }
 

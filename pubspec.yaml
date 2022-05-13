@@ -9,10 +9,9 @@ environment:
 
 dependencies:
   convert: ^3.0.1
-  crypto: ^3.0.2
+  crypto: ^3.0.1
   flutter:
     sdk: flutter
-  pointycastle: ^3.6.0
   tuple: ^2.0.0
 
 dev_dependencies:

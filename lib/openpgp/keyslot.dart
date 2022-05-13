@@ -40,6 +40,17 @@ extension KeySlotValues on KeySlot {
     }
   }
 
+  int get genTime {
+    switch (this) {
+      case KeySlot.signature:
+        return 0xCE;
+      case KeySlot.encryption:
+        return 0xCF;
+      case KeySlot.authentication:
+        return 0xD0;
+    }
+  }
+
   int get uif {
     switch (this) {
       case KeySlot.signature:
