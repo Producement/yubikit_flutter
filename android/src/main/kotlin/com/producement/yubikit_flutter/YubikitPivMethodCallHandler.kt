@@ -51,7 +51,7 @@ class YubikitPivMethodCallHandler(private val context: Context) : MethodChannel.
                 activity.startActivityForResult(intent, SERIAL_NUMBER_REQUEST)
             }
             "pivSetPin" -> {
-                val arguments = call.arguments<List<Any>>()
+                val arguments = call.arguments<List<Any>>()!!
                 val newPin = arguments[0] as String
                 val oldPin = arguments[1] as String
                 val intent = PivSetPinAction.pivSetPinIntent(context, oldPin, newPin)
@@ -59,7 +59,7 @@ class YubikitPivMethodCallHandler(private val context: Context) : MethodChannel.
                 activity.startActivityForResult(intent, SET_PIN_REQUEST)
             }
             "pivSetPuk" -> {
-                val arguments = call.arguments<List<Any>>()
+                val arguments = call.arguments<List<Any>>()!!
                 val newPuk = arguments[0] as String
                 val oldPuk = arguments[1] as String
                 val intent = PivSetPukAction.pivSetPukIntent(context, oldPuk, newPuk)
@@ -72,7 +72,7 @@ class YubikitPivMethodCallHandler(private val context: Context) : MethodChannel.
                 activity.startActivityForResult(intent, RESET_REQUEST)
             }
             "pivSignWithKey" -> {
-                val arguments = call.arguments<List<Any>>()
+                val arguments = call.arguments<List<Any>>()!!
                 val slot = arguments[0] as Int
                 val keyType = arguments[1] as Int
                 val algorithm = arguments[2] as String
@@ -84,7 +84,7 @@ class YubikitPivMethodCallHandler(private val context: Context) : MethodChannel.
                 activity.startActivityForResult(intent, SIGNATURE_REQUEST)
             }
             "pivDecryptWithKey" -> {
-                val arguments = call.arguments<List<Any>>()
+                val arguments = call.arguments<List<Any>>()!!
                 val slot = arguments[0] as Int
                 val algorithm = arguments[1] as String
                 val pin = arguments[2] as String
@@ -95,7 +95,7 @@ class YubikitPivMethodCallHandler(private val context: Context) : MethodChannel.
                 activity.startActivityForResult(intent, DECRYPT_REQUEST)
             }
             "pivGenerateKey" -> {
-                val arguments = call.arguments<List<Any>>()
+                val arguments = call.arguments<List<Any>>()!!
                 val slot = arguments[0] as Int
                 val keyType = arguments[1] as Int
                 val pinPolicy = arguments[2] as Int
@@ -118,7 +118,7 @@ class YubikitPivMethodCallHandler(private val context: Context) : MethodChannel.
                 activity.startActivityForResult(intent, GENERATE_REQUEST)
             }
             "pivCalculateSecretKey" -> {
-                val arguments = call.arguments<List<Any>>()
+                val arguments = call.arguments<List<Any>>()!!
                 val slot = arguments[0] as Int
                 val pin = arguments[1] as String
                 val publicKeyData = arguments[2] as ByteArray
@@ -137,7 +137,7 @@ class YubikitPivMethodCallHandler(private val context: Context) : MethodChannel.
                 activity.startActivityForResult(intent, SECRET_KEY_REQUEST)
             }
             "pivGetCertificate" -> {
-                val arguments = call.arguments<List<Any>>()
+                val arguments = call.arguments<List<Any>>()!!
                 val slot = arguments[0] as Int
                 val pin = arguments[1] as String
                 val intent = PivGetCertificateAction.pivGetCertificateIntent(context, pin, slot)
@@ -148,7 +148,7 @@ class YubikitPivMethodCallHandler(private val context: Context) : MethodChannel.
                 )
             }
             "pivPutCertificate" -> {
-                val arguments = call.arguments<List<Any>>()
+                val arguments = call.arguments<List<Any>>()!!
                 val slot = arguments[0] as Int
                 val pin = arguments[1] as String
                 val data = arguments[2] as ByteArray
@@ -170,7 +170,7 @@ class YubikitPivMethodCallHandler(private val context: Context) : MethodChannel.
                 )
             }
             "pivEncryptWithKey" -> {
-                val arguments = call.arguments<List<Any>>()
+                val arguments = call.arguments<List<Any>>()!!
                 val keyType = arguments[0] as Int
                 val publicKeyData = arguments[1] as ByteArray
                 val data = arguments[2] as ByteArray
@@ -241,8 +241,8 @@ class YubikitPivMethodCallHandler(private val context: Context) : MethodChannel.
         binding.removeActivityResultListener(this)
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent): Boolean {
-        Log.d(TAG, "This is the data ${data.toUri(0)}")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
+        Log.d(TAG, "This is the data ${data!!.toUri(0)}")
         val responseData = this.responseData
         if (responseData != null) {
             if (data.hasExtra("PIV_ERROR")) {

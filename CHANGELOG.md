@@ -1,3 +1,7 @@
+## 0.0.6
+
+* Moved OpenPGP to a separate library.
+
 ## 0.0.5
 
 * Added Yubikey connection status stream.

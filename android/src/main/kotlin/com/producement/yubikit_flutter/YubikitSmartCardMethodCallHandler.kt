@@ -124,13 +124,13 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
                 yubiKitManager.stopNfcDiscovery(activity)
             }
             "sendCommand" -> {
-                val arguments = call.arguments<List<Any>>()
+                val arguments = call.arguments<List<Any>>()!!
                 val command = arguments[0] as ByteArray
                 Log.d(TAG, "Sending command: ${command.toHex()}")
                 workQueue.add(SendCommandTask(command, result))
             }
             "selectApplication" -> {
-                val arguments = call.arguments<List<Any>>()
+                val arguments = call.arguments<List<Any>>()!!
                 val application = arguments[0] as ByteArray
                 Log.d(TAG, "Sending select application command: ${application.toHex()}")
                 workQueue.add(SelectApplicationTask(application, result))
@@ -209,6 +209,11 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
 
     override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
         eventSink.postValue(events)
+        if (yubiKeyDevice.value != null) {
+            events?.success("deviceConnected")
+        } else {
+            events?.success("deviceDisconnected")
+        }
     }
 
     override fun onCancel(arguments: Any?) {

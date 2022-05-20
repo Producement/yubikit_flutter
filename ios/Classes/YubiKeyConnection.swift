@@ -47,13 +47,15 @@ class YubiKeyConnection: NSObject, FlutterStreamHandler {
             YubiKitManager.shared.stopNFCConnection()
             Thread.sleep(forTimeInterval: 4.0) // Approximate time it takes for the NFC modal to dismiss
         }
-        if accessoryConnection != nil {
-            YubiKitManager.shared.stopAccessoryConnection()
-        }
     }
     
     public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
         self.eventSink = events
+        if(accessoryConnection != nil || nfcConnection != nil) {
+            events("deviceConnected")
+        } else {
+            events("deviceDisconnected")
+        }
         return nil
     }
 

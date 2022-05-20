@@ -1,6 +1,6 @@
 name: yubikit_flutter
 description: Wrapper for YubiKit iOS and Android SDKs
-version: 0.0.5
+version: 0.0.6
 homepage: https://github.com/Producement/yubikit_flutter
 
 environment:
@@ -9,17 +9,16 @@ environment:
 
 dependencies:
   convert: ^3.0.1
-  crypto: ^3.0.2
+  crypto: ^3.0.1
   flutter:
     sdk: flutter
-  pointycastle: ^3.6.0
   tuple: ^2.0.0
 
 dev_dependencies:
   test: ^1.19.5
   flutter_test:
     sdk: flutter
-  flutter_lints: ^1.0.0
+  flutter_lints: ^2.0.1
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

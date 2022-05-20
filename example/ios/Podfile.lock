@@ -1,7 +1,7 @@
 PODS:
   - Flutter (1.0.0)
   - YubiKit (4.1.0)
-  - yubikit_flutter (0.0.3):
+  - yubikit_flutter (0.0.5):
     - Flutter
     - YubiKit (~> 4.1.0)
 
@@ -22,7 +22,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Flutter: 50d75fe2f02b26cc09d224853bb45737f8b3214a
   YubiKit: e6312b7acb2058ce78f35ef6755489f6c03e562e
-  yubikit_flutter: f3c253d6bf6d022cbcce70c7fbec6480661d0b99
+  yubikit_flutter: b71791b068f9618c26dc380a3a3dae80e942f5a7
 
 PODFILE CHECKSUM: cc1f88378b4bfcf93a6ce00d2c587857c6008d3b
 

@@ -106,9 +106,9 @@ class _PivPageState extends State<PivPage> {
                 });
               },
               child: const Text("Reset")),
-          Text("Signature: " + (base64.encode(signature ?? []))),
-          Text("Public key: " + (base64.encode(publicKey ?? []))),
-          Text("Data: " + String.fromCharCodes(data)),
+          Text("Signature: ${base64.encode(signature ?? [])}"),
+          Text("Public key: ${base64.encode(publicKey ?? [])}"),
+          Text("Data: ${String.fromCharCodes(data)}"),
         ],
       ),
     );

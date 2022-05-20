@@ -6,4 +6,6 @@ Flutter wrapper around [YubiKit iOS](https://github.com/Yubico/yubikit-ios) and 
 
 Currently only PIV and raw smartcard functionality is supported (partially).
 
+Add [Yubikit OpenPGP](https://pub.dev/packages/yubikit_openpgp) for OpenPGP related functionality.
+
 Check out YubiKit iOS and Android projects for more information.
