@@ -28,8 +28,9 @@ class _OpenPGPPageState extends State<OpenPGPPage> {
 
   @override
   void initState() {
-    session = YubikitFlutterSmartCardSession();
-    interface = OpenPGPInterface(YubikeySmartCardInterface(session));
+    const session = YubikitFlutterSmartCardSession();
+    interface = const OpenPGPInterface(YubikeySmartCardInterface(session));
+    this.session = session;
     super.initState();
   }
 
