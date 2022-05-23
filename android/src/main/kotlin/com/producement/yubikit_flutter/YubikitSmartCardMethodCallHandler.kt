@@ -1,11 +1,16 @@
 package com.producement.yubikit_flutter
 
 import android.util.Log
-import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.*
+import com.producement.yubikit_flutter.smartcard.CloseConnection
+import com.producement.yubikit_flutter.smartcard.SelectApplicationTask
+import com.producement.yubikit_flutter.smartcard.SendCommandTask
+import com.producement.yubikit_flutter.smartcard.SmartCardTask
 import com.yubico.yubikit.android.YubiKitManager
 import com.yubico.yubikit.android.transport.nfc.NfcConfiguration
 import com.yubico.yubikit.android.transport.nfc.NfcNotAvailable
 import com.yubico.yubikit.android.transport.usb.UsbConfiguration
+import com.yubico.yubikit.core.Transport
 import com.yubico.yubikit.core.YubiKeyDevice
 import com.yubico.yubikit.core.smartcard.SmartCardConnection
 import com.yubico.yubikit.core.smartcard.SmartCardProtocol
@@ -37,91 +42,67 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
     private val nfcConfiguration = NfcConfiguration()
     private val yubiKeyDevice: MutableLiveData<YubiKeyDevice?> = MutableLiveData()
     private var nfcDiscoveryEnabled = false
-    private var eventSink: MutableLiveData<EventChannel.EventSink?> = MutableLiveData()
-
-    sealed class SmartCardTask(private val result: MethodChannel.Result) {
-        fun doWithConnection(
-            smartCardConnection: Result<SmartCardConnection, IOException>
-        ) {
-            try {
-                doWithConnection(smartCardConnection.value)
-            } catch (e: Exception) {
-                result.error("smart.card.error", e.localizedMessage, "")
-            }
-        }
-
-        open fun doWithConnection(smartCardConnection: SmartCardConnection) {
-            throw NotImplementedError("This should be implemented!")
-
-        }
-    }
-
-    class SendCommandTask(private val apdu: ByteArray, private val result: MethodChannel.Result) :
-        SmartCardTask(result) {
-        override fun doWithConnection(
-            smartCardConnection: SmartCardConnection
-        ) {
-            Log.d(TAG, "Executing command: ${apdu.toHex()}")
-            result.success(smartCardConnection.sendAndReceive(apdu))
-        }
-    }
-
-    class SelectApplicationTask(
-        private val application: ByteArray,
-        private val result: MethodChannel.Result
-    ) :
-        SmartCardTask(result) {
-        override fun doWithConnection(
-            smartCardConnection: SmartCardConnection
-        ) {
-            Log.d(TAG, "Selecting application: ${application.toHex()}")
-            val protocol = SmartCardProtocol(smartCardConnection)
-            result.success(protocol.select(application))
-        }
-    }
-
-    class CloseConnection(private val result: MethodChannel.Result) : SmartCardTask(result) {
-        override fun doWithConnection(smartCardConnection: SmartCardConnection) {
-            Log.d(TAG, "Closing connection")
-            result.success(null)
-        }
-    }
+    private val events: MutableLiveData<String> = MutableLiveData()
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "start" -> {
                 Log.d(TAG, "Starting connection")
-                startNfcDiscovery()
-                yubiKeyDevice.observe(activity) { device ->
-                    if (device != null) {
-                        Log.d(TAG, "Received device")
-                        device.requestConnection(SmartCardConnection::class.java) {
-                            Log.d(TAG, "Received connection")
-                            while (true) {
-                                Log.d(TAG, "Polling for next task")
-                                when (val task = workQueue.poll(5, TimeUnit.SECONDS)) {
-                                    is CloseConnection -> {
-                                        task.doWithConnection(it);break
-                                    }
-                                    is SelectApplicationTask, is SendCommandTask -> {
-                                        task.doWithConnection(it)
-                                    }
-                                    null -> {
-                                        Log.d(TAG, "Timed out");break
+                if (yubiKeyDevice.hasActiveObservers()) {
+                    Log.d(TAG, "Existing observer, skipping")
+                } else {
+                    workQueue.clear()
+                    Log.d(TAG, "Starting to observe device events")
+                    yubiKeyDevice.observe(activity) { device ->
+                        if (device != null) {
+                            Log.d(TAG, "Received device")
+                            device.requestConnection(SmartCardConnection::class.java) {
+                                Log.d(TAG, "Received connection")
+                                while (true) {
+                                    Log.d(TAG, "Polling for next task")
+                                    try {
+                                        when (val task = workQueue.poll(5, TimeUnit.SECONDS)) {
+                                            is CloseConnection -> {
+                                                activity.runOnUiThread {
+                                                    yubiKeyDevice.removeObservers(activity)
+                                                    yubiKitManager.stopNfcDiscovery(activity)
+                                                }
+                                                task.doWithConnection(it);break
+                                            }
+                                            is SelectApplicationTask, is SendCommandTask -> {
+                                                task.doWithConnection(it)
+                                            }
+                                            null -> {
+                                                activity.runOnUiThread {
+                                                    yubiKeyDevice.removeObservers(activity)
+                                                    yubiKitManager.stopNfcDiscovery(activity)
+                                                }
+                                                Log.d(TAG, "Timed out");break
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Exception during command processing", e)
+                                        yubiKeyDevice.removeObservers(activity)
                                     }
                                 }
+                                Log.d(TAG, "No more tasks")
+                                if (device.transport == Transport.NFC) {
+                                    yubiKeyDevice.postValue(null)
+                                    events.postValue("deviceDisconnected")
+                                }
                             }
-                            Log.d(TAG, "No more tasks")
+                        } else {
+                            Log.d(TAG, "No device")
                         }
-                    } else {
-                        Log.d(TAG, "No device")
+
                     }
                 }
+                startNfcDiscovery()
+                result.success(null)
             }
             "stop" -> {
                 Log.d(TAG, "Stop connection")
                 workQueue.add(CloseConnection(result))
-                yubiKitManager.stopNfcDiscovery(activity)
             }
             "sendCommand" -> {
                 val arguments = call.arguments<List<Any>>()!!
@@ -146,13 +127,11 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
         yubiKitManager.startUsbDiscovery(UsbConfiguration()) { device ->
             Log.d(TAG, "USB device connected")
             yubiKeyDevice.postValue(device)
-            eventSink.value?.success("deviceConnected")
+            events.postValue("deviceConnected")
             device.setOnClosed {
                 Log.d(TAG, "USB device disconnected")
-                activity.runOnUiThread {
-                    eventSink.value?.success("deviceDisconnected")
-                }
                 yubiKeyDevice.postValue(null)
+                events.postValue("deviceDisconnected")
             }
         }
     }
@@ -163,15 +142,8 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
         try {
             yubiKitManager.startNfcDiscovery(nfcConfiguration, activity) { device ->
                 Log.d(TAG, "NFC Session started $device")
-                yubiKeyDevice.apply {
-                    // Trigger new value, then removal
-                    activity.runOnUiThread {
-                        value = device
-                        eventSink.value?.success("deviceConnected")
-                        yubiKeyDevice.postValue(null)
-                        eventSink.value?.success("deviceDisconnected")
-                    }
-                }
+                yubiKeyDevice.postValue(device)
+                events.postValue("deviceConnected")
             }
         } catch (e: NfcNotAvailable) {
             Log.e(TAG, "Error starting NFC listening", e)
@@ -182,21 +154,25 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
         Log.d(TAG, "Stopping discovery")
         nfcDiscoveryEnabled = false
         yubiKeyDevice.value = null
+        yubiKeyDevice.removeObservers(activity)
         yubiKitManager.stopNfcDiscovery(activity)
         yubiKitManager.stopUsbDiscovery()
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        Log.d(TAG, "Attached to activity")
         activity = binding.activity as FlutterActivity
         yubiKitManager = YubiKitManager(activity)
         startDiscovery()
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
+        Log.d(TAG, "Detatching for config changes")
         yubiKitManager.stopNfcDiscovery(activity)
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        Log.d(TAG, "Reattaching from config changes")
         activity = binding.activity as FlutterActivity
         if (nfcDiscoveryEnabled) {
             startNfcDiscovery()
@@ -207,16 +183,25 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
         stopDiscovery()
     }
 
-    override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-        eventSink.postValue(events)
+    override fun onListen(arguments: Any?, eventsSink: EventChannel.EventSink) {
+        Log.d(TAG, "Registering event sink")
+        events.observe(activity) {
+            try {
+                Log.d(TAG, "Sending event: $it")
+                eventsSink.success(it)
+            } catch (e: Exception) {
+                Log.e(TAG, "Sending event failed", e)
+            }
+        }
         if (yubiKeyDevice.value != null) {
-            events?.success("deviceConnected")
+            events.postValue("deviceConnected")
         } else {
-            events?.success("deviceDisconnected")
+            events.postValue("deviceDisconnected")
         }
     }
 
     override fun onCancel(arguments: Any?) {
-        eventSink.postValue(null)
+        Log.d(TAG, "Deregistering event sink")
+        events.removeObservers(activity)
     }
 }

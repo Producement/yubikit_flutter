@@ -42,6 +42,8 @@ class YubikitFlutterPivSession {
 
   static const MethodChannel _channel = MethodChannel('yubikit_flutter_piv');
 
+  const YubikitFlutterPivSession();
+
   Future<void> start() async {
     await _channel.invokeMethod("start");
   }

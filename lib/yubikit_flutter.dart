@@ -15,8 +15,10 @@ class YubikitFlutter {
   static const EventChannel _eventChannel =
       EventChannel('yubikit_flutter_status');
 
+  const YubikitFlutter._internal();
+
   static Stream<YubikitEvent> eventStream() async* {
-    var events = _eventChannel.receiveBroadcastStream();
+    final events = _eventChannel.receiveBroadcastStream();
     await for (final event in events) {
       if (event == "deviceConnected") {
         yield YubikitEvent.deviceConnected;
@@ -29,10 +31,10 @@ class YubikitFlutter {
   }
 
   static YubikitFlutterPivSession pivSession() {
-    return YubikitFlutterPivSession();
+    return const YubikitFlutterPivSession();
   }
 
   static YubikitFlutterSmartCardSession smartCardSession() {
-    return YubikitFlutterSmartCardSession();
+    return const YubikitFlutterSmartCardSession();
   }
 }

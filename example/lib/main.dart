@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:yubikit_flutter_example/openpgp.dart';
 import 'package:yubikit_flutter_example/piv.dart';
 
 void main() {
@@ -15,6 +16,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   int _selectedIndex = 0;
   static const List<Widget> _widgetOptions = <Widget>[
+    OpenPGPPage(),
     PivPage(),
   ];
 

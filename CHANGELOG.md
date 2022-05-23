@@ -1,3 +1,7 @@
+## 0.0.7
+
+* Refactored Android smartcard interface.
+
 ## 0.0.6
 
 * Moved OpenPGP to a separate library.

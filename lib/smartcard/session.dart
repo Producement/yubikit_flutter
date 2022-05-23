@@ -1,13 +1,30 @@
 import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
-import 'package:yubikit_flutter/smartcard/application.dart';
-import 'package:yubikit_flutter/smartcard/instruction.dart';
+import 'package:yubikit_openpgp/smartcard/application.dart';
+import 'package:yubikit_openpgp/smartcard/instruction.dart';
 
 class YubikitFlutterSmartCardSession {
   static const MethodChannel _channel = MethodChannel('yubikit_flutter_sc');
 
-  YubikitFlutterSmartCardSession();
+  const YubikitFlutterSmartCardSession();
+
+  Future<T> doInSession<T>(Future<T> Function() action) async {
+    try {
+      await start();
+      return await action();
+    } finally {
+      await stop();
+    }
+  }
+
+  Future<T> doWithApplication<T>(
+      Application application, Future<T> Function() action) async {
+    return doInSession(() async {
+      await selectApplication(application);
+      return await action();
+    });
+  }
 
   Future<void> start() async {
     await _channel.invokeMethod("start");
