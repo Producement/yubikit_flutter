@@ -9,7 +9,6 @@ import 'package:yubikit_openpgp/interface.dart';
 import 'package:yubikit_openpgp/keyslot.dart';
 import 'package:yubikit_openpgp/smartcard/application.dart';
 
-import 'interface.dart';
 import 'openpgp_info.dart';
 
 class OpenPGPPage extends StatefulWidget {
@@ -29,7 +28,7 @@ class _OpenPGPPageState extends State<OpenPGPPage> {
   @override
   void initState() {
     const session = YubikitFlutterSmartCardSession();
-    interface = const OpenPGPInterface(YubikeySmartCardInterface(session));
+    interface = const OpenPGPInterface(session);
     this.session = session;
     super.initState();
   }

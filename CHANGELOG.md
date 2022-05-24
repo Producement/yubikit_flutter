@@ -1,3 +1,7 @@
+## 0.0.9
+
+* Removed the need for an extra interface.
+
 ## 0.0.7
 
 * Refactored Android smartcard interface.
