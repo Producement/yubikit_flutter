@@ -1,3 +1,7 @@
+## 0.0.10
+
+* Possibility to disable NFC discovery.
+
 ## 0.0.9
 
 * Removed the need for an extra interface.

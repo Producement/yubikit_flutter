@@ -4,10 +4,10 @@ import 'package:flutter/services.dart';
 import 'package:yubikit_openpgp/smartcard/application.dart';
 import 'package:yubikit_openpgp/smartcard/interface.dart';
 
-class YubikitFlutterSmartCardSession extends SmartCardInterface {
+class YubikitFlutterSmartCard extends SmartCardInterface {
   static const MethodChannel _channel = MethodChannel('yubikit_flutter_sc');
 
-  const YubikitFlutterSmartCardSession();
+  const YubikitFlutterSmartCard();
 
   Future<T> doInSession<T>(Future<T> Function() action) async {
     try {
@@ -26,21 +26,21 @@ class YubikitFlutterSmartCardSession extends SmartCardInterface {
     });
   }
 
-  Future<void> start() async {
-    await _channel.invokeMethod("start");
+  Future<void> start({bool nfc = true}) async {
+    await _channel.invokeMethod('start', [nfc]);
   }
 
   Future<void> stop() async {
-    await _channel.invokeMethod("stop");
+    await _channel.invokeMethod('stop');
   }
 
   @override
   Future<Uint8List> sendCommand(List<int> input) async {
-    return await _channel.invokeMethod("sendCommand", [input]);
+    return await _channel.invokeMethod('sendCommand', [input]);
   }
 
   Future<void> selectApplication(Application application) async {
     return await _channel
-        .invokeMethod("selectApplication", [application.value]);
+        .invokeMethod('selectApplication', [application.value]);
   }
 }

@@ -2,13 +2,6 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:yubikit_flutter/piv/key_algorithm.dart';
-import 'package:yubikit_flutter/piv/key_type.dart';
-import 'package:yubikit_flutter/piv/management_key_type.dart';
-import 'package:yubikit_flutter/piv/pin_policy.dart';
-import 'package:yubikit_flutter/piv/session.dart';
-import 'package:yubikit_flutter/piv/slot.dart';
-import 'package:yubikit_flutter/piv/touch_policy.dart';
 import 'package:yubikit_flutter/yubikit_flutter.dart';
 
 class PivPage extends StatefulWidget {
@@ -53,34 +46,34 @@ class _PivPageState extends State<PivPage> {
         children: [
           ElevatedButton(
               onPressed: () async => {
-                    setSignature(await YubikitFlutter.pivSession().signWithKey(
+                    setSignature(await YubikitFlutter.piv().signWithKey(
                         YKFPIVSlot.signature,
                         YKFPIVKeyType.rsa2048,
                         YKFPIVKeyAlgorithm.rsaSignatureMessagePKCS1v15SHA512,
-                        YubikitFlutterPivSession.defaultPin,
+                        YubikitFlutterPiv.defaultPin,
                         data))
                   },
               child: const Text("Sign")),
           ElevatedButton(
               onPressed: () async => {
-                    setPublicKey(await YubikitFlutter.pivSession().generateKey(
+                    setPublicKey(await YubikitFlutter.piv().generateKey(
                         YKFPIVSlot.signature,
                         YKFPIVKeyType.rsa2048,
                         YKFPIVPinPolicy.def,
                         YKFPIVTouchPolicy.def,
                         YKFPIVManagementKeyType.tripleDES,
                         Uint8List.fromList(
-                            YubikitFlutterPivSession.defaultManagementKey),
-                        YubikitFlutterPivSession.defaultPin))
+                            YubikitFlutterPiv.defaultManagementKey),
+                        YubikitFlutterPiv.defaultPin))
                   },
               child: const Text("Generate key")),
           ElevatedButton(
               onPressed: () async {
-                Uint8List? decryptedData = await YubikitFlutter.pivSession()
+                Uint8List? decryptedData = await YubikitFlutter.piv()
                     .decryptWithKey(
                         YKFPIVSlot.signature,
                         YKFPIVKeyAlgorithm.rsaEncryptionPKCS1,
-                        YubikitFlutterPivSession.defaultPin,
+                        YubikitFlutterPiv.defaultPin,
                         data);
                 setState(() {
                   data = decryptedData;
@@ -89,7 +82,7 @@ class _PivPageState extends State<PivPage> {
               child: const Text("Decrypt data")),
           ElevatedButton(
               onPressed: () async {
-                Uint8List encryptedData = await YubikitFlutter.pivSession()
+                Uint8List encryptedData = await YubikitFlutter.piv()
                     .encryptWithKey(YKFPIVKeyType.rsa2048, publicKey!, data);
                 setState(() {
                   data = encryptedData;
@@ -98,7 +91,7 @@ class _PivPageState extends State<PivPage> {
               child: const Text("Encrypt data")),
           ElevatedButton(
               onPressed: () async {
-                await YubikitFlutter.pivSession().reset();
+                await YubikitFlutter.piv().reset();
                 setState(() {
                   publicKey = null;
                   signature = null;

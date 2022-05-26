@@ -10,9 +10,9 @@ import 'package:yubikit_flutter/piv/touch_policy.dart';
 
 import 'slot.dart';
 
-class YubikitFlutterPivSession {
-  static const defaultPin = "123456";
-  static const defaultPuk = "12345678";
+class YubikitFlutterPiv {
+  static const defaultPin = '123456';
+  static const defaultPuk = '12345678';
   static const defaultManagementKey = [
     0x01,
     0x02,
@@ -42,15 +42,7 @@ class YubikitFlutterPivSession {
 
   static const MethodChannel _channel = MethodChannel('yubikit_flutter_piv');
 
-  const YubikitFlutterPivSession();
-
-  Future<void> start() async {
-    await _channel.invokeMethod("start");
-  }
-
-  Future<void> stop() async {
-    await _channel.invokeMethod("stop");
-  }
+  const YubikitFlutterPiv();
 
   Future<Uint8List> generateKey(
       YKFPIVSlot slot,
@@ -60,7 +52,7 @@ class YubikitFlutterPivSession {
       YKFPIVManagementKeyType managementKeyType,
       Uint8List managementKey,
       String pin) async {
-    return await _channel.invokeMethod("pivGenerateKey", [
+    return await _channel.invokeMethod('pivGenerateKey', [
       slot.value,
       type.value,
       pinPolicy.value,
@@ -74,39 +66,39 @@ class YubikitFlutterPivSession {
   Future<Uint8List> signWithKey(YKFPIVSlot slot, YKFPIVKeyType type,
       YKFPIVKeyAlgorithm algorithm, String pin, Uint8List data) async {
     return await _channel.invokeMethod(
-        "pivSignWithKey", [slot.value, type.value, algorithm.value, pin, data]);
+        'pivSignWithKey', [slot.value, type.value, algorithm.value, pin, data]);
   }
 
   Future<Uint8List> decryptWithKey(YKFPIVSlot slot,
       YKFPIVKeyAlgorithm algorithm, String pin, Uint8List encryptedData) async {
     return await _channel.invokeMethod(
-        "pivDecryptWithKey", [slot.value, algorithm.value, pin, encryptedData]);
+        'pivDecryptWithKey', [slot.value, algorithm.value, pin, encryptedData]);
   }
 
   Future<Uint8List> encryptWithKey(
       YKFPIVKeyType type, Uint8List publicKey, Uint8List data) async {
     return await _channel
-        .invokeMethod("pivEncryptWithKey", [type.value, publicKey, data]);
+        .invokeMethod('pivEncryptWithKey', [type.value, publicKey, data]);
   }
 
   Future<void> reset() async {
-    await _channel.invokeMethod("pivReset");
+    await _channel.invokeMethod('pivReset');
   }
 
   Future<int> getSerialNumber() async {
-    return await _channel.invokeMethod("pivSerialNumber");
+    return await _channel.invokeMethod('pivSerialNumber');
   }
 
   Future<void> setPin(String newPin, String oldPin) async {
-    await _channel.invokeMethod("pivSetPin", [newPin, oldPin]);
+    await _channel.invokeMethod('pivSetPin', [newPin, oldPin]);
   }
 
   Future<void> setPuk(String newPuk, String oldPuk) async {
-    await _channel.invokeMethod("pivSetPuk", [newPuk, oldPuk]);
+    await _channel.invokeMethod('pivSetPuk', [newPuk, oldPuk]);
   }
 
   Future<Uint8List> getCertificate(YKFPIVSlot slot, String pin) async {
-    return await _channel.invokeMethod("pivGetCertificate", [slot.value, pin]);
+    return await _channel.invokeMethod('pivGetCertificate', [slot.value, pin]);
   }
 
   Future<Uint8List> putCertificate(
@@ -116,7 +108,7 @@ class YubikitFlutterPivSession {
     YKFPIVManagementKeyType managementKeyType,
     Uint8List managementKey,
   ) async {
-    return await _channel.invokeMethod("pivPutCertificate",
+    return await _channel.invokeMethod('pivPutCertificate',
         [slot.value, pin, certificate, managementKeyType.value, managementKey]);
   }
 
@@ -126,6 +118,6 @@ class YubikitFlutterPivSession {
     Uint8List publicKey,
   ) async {
     return await _channel
-        .invokeMethod("pivCalculateSecretKey", [slot.value, pin, publicKey]);
+        .invokeMethod('pivCalculateSecretKey', [slot.value, pin, publicKey]);
   }
 }

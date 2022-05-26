@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tuple/tuple.dart';
-import 'package:yubikit_openpgp/interface.dart';
-import 'package:yubikit_openpgp/keyslot.dart';
-import 'package:yubikit_openpgp/touch_mode.dart';
+import 'package:yubikit_flutter/yubikit_flutter.dart';
 
 class OpenPGPInfo extends StatelessWidget {
   final Tuple2 openPGPVersion;
@@ -18,7 +16,7 @@ class OpenPGPInfo extends StatelessWidget {
       : super(key: key);
 
   static Future<void> showOpenPGPInfo(
-      BuildContext context, OpenPGPInterface openPGPInterface) async {
+      BuildContext context, YubikitOpenPGP openPGPInterface) async {
     Tuple3 applicationVersion = await openPGPInterface.getApplicationVersion();
     PinRetries retries = await openPGPInterface.getRemainingPinTries();
     Tuple2 openPGPVersion = await openPGPInterface.getOpenPGPVersion();

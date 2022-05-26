@@ -1,13 +1,8 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
-import 'package:yubikit_flutter/smartcard/session.dart';
 import 'package:yubikit_flutter/yubikit_flutter.dart';
 import 'package:yubikit_flutter_example/nfc_dialog.dart';
-import 'package:yubikit_openpgp/curve.dart';
-import 'package:yubikit_openpgp/interface.dart';
-import 'package:yubikit_openpgp/keyslot.dart';
-import 'package:yubikit_openpgp/smartcard/application.dart';
 
 import 'openpgp_info.dart';
 
@@ -19,16 +14,16 @@ class OpenPGPPage extends StatefulWidget {
 }
 
 class _OpenPGPPageState extends State<OpenPGPPage> {
-  late YubikitFlutterSmartCardSession session;
-  late OpenPGPInterface interface;
+  late YubikitFlutterSmartCard session;
+  late YubikitOpenPGP interface;
   Uint8List? signature;
   Uint8List? publicKey;
   String? encryptedData;
 
   @override
   void initState() {
-    const session = YubikitFlutterSmartCardSession();
-    interface = const OpenPGPInterface(session);
+    const session = YubikitFlutterSmartCard();
+    interface = const YubikitOpenPGP(session);
     this.session = session;
     super.initState();
   }
@@ -65,7 +60,7 @@ class _OpenPGPPageState extends State<OpenPGPPage> {
           ElevatedButton(
               onPressed: () async {
                 await session.doWithApplication(Application.openpgp, () async {
-                  await interface.verifyAdmin(OpenPGPInterface.defaultAdminPin);
+                  await interface.verifyAdmin(YubikitOpenPGP.defaultAdminPin);
                   await interface.generateECKey(
                       KeySlot.encryption, ECCurve.x25519);
                   if (!mounted) return;

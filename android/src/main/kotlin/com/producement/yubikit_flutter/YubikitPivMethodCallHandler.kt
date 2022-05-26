@@ -42,9 +42,6 @@ class YubikitPivMethodCallHandler(private val context: Context) : MethodChannel.
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: MethodChannel.Result) {
         Log.d(TAG, "Method ${call.method} called")
         when (call.method) {
-            "start", "stop" -> {
-
-            }
             "pivSerialNumber" -> {
                 val intent = PivSerialNumberAction.pivSerialNumberIntent(context)
                 observeResponse(result)

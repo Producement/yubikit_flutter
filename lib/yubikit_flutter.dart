@@ -1,9 +1,19 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
-import 'package:yubikit_flutter/smartcard/session.dart';
+import 'package:yubikit_openpgp/yubikit_openpgp.dart';
+import 'smartcard/smartcard.dart';
+import 'piv/piv.dart';
 
-import 'piv/session.dart';
+export 'smartcard/smartcard.dart';
+export 'piv/piv.dart';
+export 'piv/key_algorithm.dart';
+export 'piv/key_type.dart';
+export 'piv/management_key_type.dart';
+export 'piv/pin_policy.dart';
+export 'piv/slot.dart';
+export 'piv/touch_policy.dart';
+export 'package:yubikit_openpgp/yubikit_openpgp.dart';
 
 enum YubikitEvent {
   deviceConnected,
@@ -20,9 +30,9 @@ class YubikitFlutter {
   static Stream<YubikitEvent> eventStream() async* {
     final events = _eventChannel.receiveBroadcastStream();
     await for (final event in events) {
-      if (event == "deviceConnected") {
+      if (event == 'deviceConnected') {
         yield YubikitEvent.deviceConnected;
-      } else if (event == "deviceDisconnected") {
+      } else if (event == 'deviceDisconnected') {
         yield YubikitEvent.deviceDisconnected;
       } else {
         yield YubikitEvent.unknown;
@@ -30,11 +40,15 @@ class YubikitFlutter {
     }
   }
 
-  static YubikitFlutterPivSession pivSession() {
-    return const YubikitFlutterPivSession();
+  static YubikitFlutterPiv piv() {
+    return const YubikitFlutterPiv();
   }
 
-  static YubikitFlutterSmartCardSession smartCardSession() {
-    return const YubikitFlutterSmartCardSession();
+  static YubikitFlutterSmartCard smartCard() {
+    return const YubikitFlutterSmartCard();
+  }
+
+  static YubikitOpenPGP openPGP() {
+    return const YubikitOpenPGP(YubikitFlutterSmartCard());
   }
 }

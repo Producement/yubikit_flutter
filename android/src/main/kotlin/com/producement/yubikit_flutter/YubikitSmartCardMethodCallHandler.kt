@@ -42,12 +42,14 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
     private val nfcConfiguration = NfcConfiguration()
     private val yubiKeyDevice: MutableLiveData<YubiKeyDevice?> = MutableLiveData()
     private var nfcDiscoveryEnabled = false
-    private val events: MutableLiveData<String> = MutableLiveData()
+    private var eventSink: EventChannel.EventSink? = null
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "start" -> {
-                Log.d(TAG, "Starting connection")
+                val arguments = call.arguments<List<Any>>()!!
+                val nfc = arguments[0] as Boolean
+                Log.d(TAG, "Starting connection (nfc=$nfc)")
                 if (yubiKeyDevice.hasActiveObservers()) {
                     Log.d(TAG, "Existing observer, skipping")
                 } else {
@@ -88,7 +90,7 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
                                 Log.d(TAG, "No more tasks")
                                 if (device.transport == Transport.NFC) {
                                     yubiKeyDevice.postValue(null)
-                                    events.postValue("deviceDisconnected")
+                                    eventSink?.success("deviceDisconnected")
                                 }
                             }
                         } else {
@@ -97,7 +99,9 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
 
                     }
                 }
-                startNfcDiscovery()
+                if (nfc) {
+                    startNfcDiscovery()
+                }
                 result.success(null)
             }
             "stop" -> {
@@ -127,11 +131,11 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
         yubiKitManager.startUsbDiscovery(UsbConfiguration()) { device ->
             Log.d(TAG, "USB device connected")
             yubiKeyDevice.postValue(device)
-            events.postValue("deviceConnected")
+            eventSink?.success("deviceConnected")
             device.setOnClosed {
                 Log.d(TAG, "USB device disconnected")
                 yubiKeyDevice.postValue(null)
-                events.postValue("deviceDisconnected")
+                eventSink?.success("deviceDisconnected")
             }
         }
     }
@@ -143,7 +147,7 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
             yubiKitManager.startNfcDiscovery(nfcConfiguration, activity) { device ->
                 Log.d(TAG, "NFC Session started $device")
                 yubiKeyDevice.postValue(device)
-                events.postValue("deviceConnected")
+                eventSink?.success("deviceConnected")
             }
         } catch (e: NfcNotAvailable) {
             Log.e(TAG, "Error starting NFC listening", e)
@@ -183,25 +187,18 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
         stopDiscovery()
     }
 
-    override fun onListen(arguments: Any?, eventsSink: EventChannel.EventSink) {
+    override fun onListen(arguments: Any?, eventSink: EventChannel.EventSink) {
+        this.eventSink = eventSink
         Log.d(TAG, "Registering event sink")
-        events.observe(activity) {
-            try {
-                Log.d(TAG, "Sending event: $it")
-                eventsSink.success(it)
-            } catch (e: Exception) {
-                Log.e(TAG, "Sending event failed", e)
-            }
-        }
         if (yubiKeyDevice.value != null) {
-            events.postValue("deviceConnected")
+            eventSink.success("deviceConnected")
         } else {
-            events.postValue("deviceDisconnected")
+            eventSink.success("deviceDisconnected")
         }
     }
 
     override fun onCancel(arguments: Any?) {
         Log.d(TAG, "Deregistering event sink")
-        events.removeObservers(activity)
+        this.eventSink = null
     }
 }
