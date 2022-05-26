@@ -1,5 +1,6 @@
 package com.producement.yubikit_flutter
 
+import android.app.Activity
 import android.content.Intent
 import android.util.Log
 import androidx.annotation.NonNull
@@ -91,10 +92,11 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
-        Log.d(TAG, "This is the data ${data!!.toUri(0)}")
         val responseData = this.responseData
         if (responseData != null) {
-            if (data.hasExtra("SC_ERROR")) {
+            if (resultCode == Activity.RESULT_CANCELED) {
+                responseData.postValue(Result.failure<Exception>(java.lang.Exception("User canceled")))
+            } else if (data != null && data.hasExtra("SC_ERROR")) {
                 responseData.postValue(
                     Result.failure<Exception>(
                         Exception(
@@ -104,7 +106,7 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
                         )
                     )
                 )
-            } else {
+            } else if (data != null) {
                 when (requestCode) {
                     SIGNATURE_REQUEST, DECRYPT_REQUEST, GENERATE_REQUEST,
                     GET_CERTIFICATE_REQUEST, SECRET_KEY_REQUEST, SMART_CARD_REQUEST -> responseData.postValue(

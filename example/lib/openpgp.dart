@@ -61,7 +61,6 @@ class _OpenPGPPageState extends State<OpenPGPPage> {
               child: const Text("Get encryption pubkey")),
           ElevatedButton(
               onPressed: () async {
-                await interface.verifyAdmin(YubikitOpenPGP.defaultAdminPin);
                 final key = await interface.generateECKey(
                     KeySlot.encryption, ECCurve.x25519);
                 if (!mounted) return;

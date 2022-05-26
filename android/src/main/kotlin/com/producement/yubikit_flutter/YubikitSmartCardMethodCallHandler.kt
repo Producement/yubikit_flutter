@@ -28,14 +28,16 @@ class YubikitSmartCardMethodCallHandler(
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "sendCommand" -> {
-                val arguments = call.arguments<List<Any>>()!!
+                val arguments = call.arguments<List<Any?>>()!!
                 val command = arguments[0] as ByteArray
                 val application = arguments[1] as ByteArray
+                val verifyCommand = arguments[2] as ByteArray?
                 Log.d(
                     TAG,
                     "Sending command: ${command.toHex()} to application ${application.toHex()}"
                 )
-                val intent = SmartCardAction.smartCardIntent(context, command, application)
+                val intent =
+                    SmartCardAction.smartCardIntent(context, command, verifyCommand, application)
                 resultHandler.handleResult(result)
                 activity.startActivityForResult(intent, SMART_CARD_REQUEST)
             }

@@ -1,7 +1,4 @@
-import 'dart:async';
-import 'dart:typed_data';
-
-import 'package:yubikit_openpgp/smartcard/interface.dart';
+import 'package:yubikit_openpgp/smartcard/pin_provider.dart';
 import 'package:yubikit_openpgp/yubikit_openpgp.dart';
 
 import 'piv/piv.dart';
@@ -29,19 +26,8 @@ class YubikitFlutter {
     return const YubikitFlutterSmartCard();
   }
 
-  static YubikitOpenPGP openPGP() {
-    return const YubikitOpenPGP(
-        YubikitFlutterOpenPGPSmartCard(YubikitFlutterSmartCard()));
-  }
-}
-
-class YubikitFlutterOpenPGPSmartCard extends SmartCardInterface {
-  final YubikitFlutterSmartCard _smartCard;
-
-  const YubikitFlutterOpenPGPSmartCard(this._smartCard);
-
-  @override
-  Future<Uint8List> sendCommand(List<int> input) async {
-    return await _smartCard.sendCommand(Application.openpgp, input);
+  static YubikitOpenPGP openPGP({PinProvider? pinProvider}) {
+    return YubikitOpenPGP(
+        const YubikitFlutterSmartCard(), pinProvider ?? PinProvider());
   }
 }

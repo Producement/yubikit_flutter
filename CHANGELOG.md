@@ -1,3 +1,7 @@
+## 0.0.12
+
+* Support NFC by making it possible to verify pin before each command.
+
 ## 0.0.11
 
 * Removed unusable APIs.
