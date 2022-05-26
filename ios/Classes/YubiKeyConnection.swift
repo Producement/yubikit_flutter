@@ -7,13 +7,12 @@
 import YubiKit
 import OSLog
 
-class YubiKeyConnection: NSObject, FlutterStreamHandler {
+class YubiKeyConnection: NSObject {
     
     var accessoryConnection: YKFAccessoryConnection?
     var nfcConnection: YKFNFCConnection?
     var connectionCallback: ((_ connection: YKFConnectionProtocol) -> Void)?
     let logger = Logger()
-    var eventSink: FlutterEventSink?
     
     override init() {
         super.init()
@@ -48,32 +47,15 @@ class YubiKeyConnection: NSObject, FlutterStreamHandler {
             Thread.sleep(forTimeInterval: 4.0) // Approximate time it takes for the NFC modal to dismiss
         }
     }
-    
-    public func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink) -> FlutterError? {
-        self.eventSink = events
-        if(accessoryConnection != nil || nfcConnection != nil) {
-            events("deviceConnected")
-        } else {
-            events("deviceDisconnected")
-        }
-        return nil
-    }
-
-    public func onCancel(withArguments arguments: Any?) -> FlutterError? {
-        self.eventSink = nil
-        return nil
-    }
 }
 
 extension YubiKeyConnection: YKFManagerDelegate {
     func didConnectNFC(_ connection: YKFNFCConnection) {
         logger.info("NFC connected")
         nfcConnection = connection
-        if let eventSink = eventSink {
-            eventSink("deviceConnected")
-        }
         if let callback = connectionCallback {
             callback(connection)
+            connectionCallback = nil
             logger.info("NFC connection callback completed")
         }
     }
@@ -81,24 +63,15 @@ extension YubiKeyConnection: YKFManagerDelegate {
     func didDisconnectNFC(_ connection: YKFNFCConnection, error: Error?) {
         logger.info("NFC disconnected")
         nfcConnection = nil
-        if let eventSink = eventSink {
-            eventSink("deviceDisconnected")
-        }
     }
     
     func didConnectAccessory(_ connection: YKFAccessoryConnection) {
         logger.info("Accessory connected")
         accessoryConnection = connection
-        if let eventSink = eventSink {
-            eventSink("deviceConnected")
-        }
     }
     
     func didDisconnectAccessory(_ connection: YKFAccessoryConnection, error: Error?) {
         logger.info("Accessory disconnected")
         accessoryConnection = nil
-        if let eventSink = eventSink {
-            eventSink("deviceDisconnected")
-        }
     }
 }

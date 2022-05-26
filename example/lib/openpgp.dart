@@ -2,9 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:yubikit_flutter/yubikit_flutter.dart';
-import 'package:yubikit_flutter_example/nfc_dialog.dart';
 
 import 'openpgp_info.dart';
+import 'text_dialog.dart';
 
 class OpenPGPPage extends StatefulWidget {
   const OpenPGPPage({Key? key}) : super(key: key);
@@ -14,7 +14,6 @@ class OpenPGPPage extends StatefulWidget {
 }
 
 class _OpenPGPPageState extends State<OpenPGPPage> {
-  late YubikitFlutterSmartCard session;
   late YubikitOpenPGP interface;
   Uint8List? signature;
   Uint8List? publicKey;
@@ -22,9 +21,7 @@ class _OpenPGPPageState extends State<OpenPGPPage> {
 
   @override
   void initState() {
-    const session = YubikitFlutterSmartCard();
-    interface = const YubikitOpenPGP(session);
-    this.session = session;
+    interface = YubikitFlutter.openPGP();
     super.initState();
   }
 
@@ -52,48 +49,30 @@ class _OpenPGPPageState extends State<OpenPGPPage> {
         children: [
           ElevatedButton(
               onPressed: () async {
-                await session.doWithApplication(Application.openpgp, () async {
-                  await OpenPGPInfo.showOpenPGPInfo(context, interface);
-                });
+                await OpenPGPInfo.showOpenPGPInfo(context, interface);
               },
               child: const Text("Info")),
           ElevatedButton(
               onPressed: () async {
-                await session.doWithApplication(Application.openpgp, () async {
-                  await interface.verifyAdmin(YubikitOpenPGP.defaultAdminPin);
-                  await interface.generateECKey(
-                      KeySlot.encryption, ECCurve.x25519);
-                  if (!mounted) return;
-                  await NFCDialog.showNfcDialog(context);
-                });
+                final key = await interface.getECPublicKey(KeySlot.encryption);
+                if (!mounted) return;
+                await TextDialog.showTextDialog(context, 'Public key: $key');
               },
-              child: const Text("Generate")),
+              child: const Text("Get encryption pubkey")),
           ElevatedButton(
               onPressed: () async {
-                await session.doWithApplication(Application.openpgp, () async {
-                  await interface.reset();
-                });
+                await interface.verifyAdmin(YubikitOpenPGP.defaultAdminPin);
+                final key = await interface.generateECKey(
+                    KeySlot.encryption, ECCurve.x25519);
+                if (!mounted) return;
+                await TextDialog.showTextDialog(context, 'Public key: $key');
+              },
+              child: const Text("Generate encryption key")),
+          ElevatedButton(
+              onPressed: () async {
+                await interface.reset();
               },
               child: const Text("Reset")),
-          StreamBuilder<YubikitEvent>(
-              stream: YubikitFlutter.eventStream(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Text(snapshot.error.toString());
-                } else {
-                  switch (snapshot.connectionState) {
-                    case ConnectionState.none:
-                      return const CircularProgressIndicator();
-                    case ConnectionState.waiting:
-                      return const CircularProgressIndicator();
-                    case ConnectionState.active:
-                      return Text("Device state: ${snapshot.data?.name}",
-                          key: Key(snapshot.data?.name ?? 'N/A'));
-                    case ConnectionState.done:
-                      return Column();
-                  }
-                }
-              }),
         ],
       ),
     );

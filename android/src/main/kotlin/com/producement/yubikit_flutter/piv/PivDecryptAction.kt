@@ -30,8 +30,6 @@ class PivDecryptAction : PivAction() {
             intent.putExtra("PIV_MESSAGE", message)
             return intent
         }
-
-        fun getPivDecrypted(intent: Intent) = intent.getByteArrayExtra("PIV_RESULT")
     }
 
     override fun onYubiKeyConnection(

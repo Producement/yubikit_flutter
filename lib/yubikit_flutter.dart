@@ -1,44 +1,25 @@
 import 'dart:async';
+import 'dart:typed_data';
 
-import 'package:flutter/services.dart';
+import 'package:yubikit_openpgp/smartcard/interface.dart';
 import 'package:yubikit_openpgp/yubikit_openpgp.dart';
-import 'smartcard/smartcard.dart';
-import 'piv/piv.dart';
 
-export 'smartcard/smartcard.dart';
-export 'piv/piv.dart';
+import 'piv/piv.dart';
+import 'smartcard/smartcard.dart';
+
+export 'package:yubikit_openpgp/yubikit_openpgp.dart';
+
 export 'piv/key_algorithm.dart';
 export 'piv/key_type.dart';
 export 'piv/management_key_type.dart';
 export 'piv/pin_policy.dart';
+export 'piv/piv.dart';
 export 'piv/slot.dart';
 export 'piv/touch_policy.dart';
-export 'package:yubikit_openpgp/yubikit_openpgp.dart';
-
-enum YubikitEvent {
-  deviceConnected,
-  deviceDisconnected,
-  unknown,
-}
+export 'smartcard/smartcard.dart';
 
 class YubikitFlutter {
-  static const EventChannel _eventChannel =
-      EventChannel('yubikit_flutter_status');
-
   const YubikitFlutter._internal();
-
-  static Stream<YubikitEvent> eventStream() async* {
-    final events = _eventChannel.receiveBroadcastStream();
-    await for (final event in events) {
-      if (event == 'deviceConnected') {
-        yield YubikitEvent.deviceConnected;
-      } else if (event == 'deviceDisconnected') {
-        yield YubikitEvent.deviceDisconnected;
-      } else {
-        yield YubikitEvent.unknown;
-      }
-    }
-  }
 
   static YubikitFlutterPiv piv() {
     return const YubikitFlutterPiv();
@@ -49,6 +30,18 @@ class YubikitFlutter {
   }
 
   static YubikitOpenPGP openPGP() {
-    return const YubikitOpenPGP(YubikitFlutterSmartCard());
+    return const YubikitOpenPGP(
+        YubikitFlutterOpenPGPSmartCard(YubikitFlutterSmartCard()));
+  }
+}
+
+class YubikitFlutterOpenPGPSmartCard extends SmartCardInterface {
+  final YubikitFlutterSmartCard _smartCard;
+
+  const YubikitFlutterOpenPGPSmartCard(this._smartCard);
+
+  @override
+  Future<Uint8List> sendCommand(List<int> input) async {
+    return await _smartCard.sendCommand(Application.openpgp, input);
   }
 }

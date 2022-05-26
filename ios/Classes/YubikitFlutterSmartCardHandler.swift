@@ -32,14 +32,16 @@ public class YubikitFlutterSmartCardHandler {
                 }
                 self.logger.info("Smart card command executed")
                 result(data)
+                self.yubiKeyConnection.stop()
             })
         }
     
         
         switch(call.method) {
-            case "selectApplication":
-                let application: FlutterStandardTypedData = argument(0)
-                self.logger.debug("Received select command: \(application.data.hexDescription)")
+            case "sendCommand":
+                let apdu: FlutterStandardTypedData = argument(0)
+                let application: FlutterStandardTypedData = argument(1)
+                self.logger.debug("Received select application command: \(application.data.hexDescription)")
                 yubiKeyConnection.connection { connection in
                     guard let smartCardInterface = connection.smartCardInterface else {
                         self.logger.error("Smart card interface not present!")
@@ -72,25 +74,16 @@ public class YubikitFlutterSmartCardHandler {
                                         result(FlutterError(code: "smart.card.error", message: "\(error!.localizedDescription)", details: ""))
                                         return
                                     }
+                                    self.logger.debug("Received command: \(apdu.data.hexDescription)")
+                                    runCommand(smartCardInterface: smartCardInterface, data: apdu.data)
                                 }
-                                result(nil)
                             })
                         } else {
-                            result(nil)
+                            self.logger.debug("Received command: \(apdu.data.hexDescription)")
+                            runCommand(smartCardInterface: smartCardInterface, data: apdu.data)
                         }
                         
                     }
-                }
-            case "sendCommand":
-                let apdu: FlutterStandardTypedData = argument(0)
-                self.logger.debug("Received command: \(apdu.data.hexDescription)")
-                yubiKeyConnection.connection { connection in
-                    guard let smartCardInterface = connection.smartCardInterface else {
-                        self.logger.error("Smart card interface not present!")
-                        result(FlutterError(code: "smart.card.error", message: "Smart card not present", details: ""))
-                        return
-                    }
-                    runCommand(smartCardInterface: smartCardInterface, data: apdu.data)
                 }
             default:
                 return false

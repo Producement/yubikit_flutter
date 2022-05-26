@@ -1,3 +1,8 @@
+## 0.0.11
+
+* Removed unusable APIs.
+* Make iOS and Android work the same way.
+
 ## 0.0.10
 
 * Possibility to disable NFC discovery.

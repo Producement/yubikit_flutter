@@ -1,124 +1,43 @@
 package com.producement.yubikit_flutter
 
+import android.content.Context
 import android.util.Log
-import androidx.lifecycle.*
-import com.producement.yubikit_flutter.smartcard.CloseConnection
-import com.producement.yubikit_flutter.smartcard.SelectApplicationTask
-import com.producement.yubikit_flutter.smartcard.SendCommandTask
-import com.producement.yubikit_flutter.smartcard.SmartCardTask
-import com.yubico.yubikit.android.YubiKitManager
-import com.yubico.yubikit.android.transport.nfc.NfcConfiguration
-import com.yubico.yubikit.android.transport.nfc.NfcNotAvailable
-import com.yubico.yubikit.android.transport.usb.UsbConfiguration
-import com.yubico.yubikit.core.Transport
-import com.yubico.yubikit.core.YubiKeyDevice
-import com.yubico.yubikit.core.smartcard.SmartCardConnection
-import com.yubico.yubikit.core.smartcard.SmartCardProtocol
-import com.yubico.yubikit.core.util.Result
+import com.producement.yubikit_flutter.YubikitFlutterPlugin.Companion.SMART_CARD_REQUEST
+import com.producement.yubikit_flutter.smartcard.SmartCardAction
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
-import java.io.IOException
-import java.util.concurrent.LinkedBlockingQueue
-import java.util.concurrent.TimeUnit
 
 fun ByteArray.toHex(): String =
     joinToString(separator = "") { eachByte -> "%02x".format(eachByte) }
 
-class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, ActivityAware,
-    EventChannel.StreamHandler {
-
-    private val workQueue = LinkedBlockingQueue<SmartCardTask>()
+class YubikitSmartCardMethodCallHandler(
+    private val context: Context,
+    private val resultHandler: ResultHandler
+) :
+    MethodChannel.MethodCallHandler, ActivityAware {
 
     companion object {
         const val TAG = "YKSCMethodCallHandler"
     }
 
-    private lateinit var yubiKitManager: YubiKitManager
     private lateinit var activity: FlutterActivity
-    private val nfcConfiguration = NfcConfiguration()
-    private val yubiKeyDevice: MutableLiveData<YubiKeyDevice?> = MutableLiveData()
-    private var nfcDiscoveryEnabled = false
-    private var eventSink: EventChannel.EventSink? = null
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            "start" -> {
-                val arguments = call.arguments<List<Any>>()!!
-                val nfc = arguments[0] as Boolean
-                Log.d(TAG, "Starting connection (nfc=$nfc)")
-                if (yubiKeyDevice.hasActiveObservers()) {
-                    Log.d(TAG, "Existing observer, skipping")
-                } else {
-                    workQueue.clear()
-                    Log.d(TAG, "Starting to observe device events")
-                    yubiKeyDevice.observe(activity) { device ->
-                        if (device != null) {
-                            Log.d(TAG, "Received device")
-                            device.requestConnection(SmartCardConnection::class.java) {
-                                Log.d(TAG, "Received connection")
-                                while (true) {
-                                    Log.d(TAG, "Polling for next task")
-                                    try {
-                                        when (val task = workQueue.poll(5, TimeUnit.SECONDS)) {
-                                            is CloseConnection -> {
-                                                activity.runOnUiThread {
-                                                    yubiKeyDevice.removeObservers(activity)
-                                                    yubiKitManager.stopNfcDiscovery(activity)
-                                                }
-                                                task.doWithConnection(it);break
-                                            }
-                                            is SelectApplicationTask, is SendCommandTask -> {
-                                                task.doWithConnection(it)
-                                            }
-                                            null -> {
-                                                activity.runOnUiThread {
-                                                    yubiKeyDevice.removeObservers(activity)
-                                                    yubiKitManager.stopNfcDiscovery(activity)
-                                                }
-                                                Log.d(TAG, "Timed out");break
-                                            }
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e(TAG, "Exception during command processing", e)
-                                        yubiKeyDevice.removeObservers(activity)
-                                    }
-                                }
-                                Log.d(TAG, "No more tasks")
-                                if (device.transport == Transport.NFC) {
-                                    yubiKeyDevice.postValue(null)
-                                    eventSink?.success("deviceDisconnected")
-                                }
-                            }
-                        } else {
-                            Log.d(TAG, "No device")
-                        }
-
-                    }
-                }
-                if (nfc) {
-                    startNfcDiscovery()
-                }
-                result.success(null)
-            }
-            "stop" -> {
-                Log.d(TAG, "Stop connection")
-                workQueue.add(CloseConnection(result))
-            }
             "sendCommand" -> {
                 val arguments = call.arguments<List<Any>>()!!
                 val command = arguments[0] as ByteArray
-                Log.d(TAG, "Sending command: ${command.toHex()}")
-                workQueue.add(SendCommandTask(command, result))
-            }
-            "selectApplication" -> {
-                val arguments = call.arguments<List<Any>>()!!
-                val application = arguments[0] as ByteArray
-                Log.d(TAG, "Sending select application command: ${application.toHex()}")
-                workQueue.add(SelectApplicationTask(application, result))
+                val application = arguments[1] as ByteArray
+                Log.d(
+                    TAG,
+                    "Sending command: ${command.toHex()} to application ${application.toHex()}"
+                )
+                val intent = SmartCardAction.smartCardIntent(context, command, application)
+                resultHandler.handleResult(result)
+                activity.startActivityForResult(intent, SMART_CARD_REQUEST)
             }
             else -> {
                 result.notImplemented()
@@ -126,79 +45,21 @@ class YubikitSmartCardMethodCallHandler : MethodChannel.MethodCallHandler, Activ
         }
     }
 
-    private fun startDiscovery() {
-        Log.d(TAG, "Starting discovery")
-        yubiKitManager.startUsbDiscovery(UsbConfiguration()) { device ->
-            Log.d(TAG, "USB device connected")
-            yubiKeyDevice.postValue(device)
-            eventSink?.success("deviceConnected")
-            device.setOnClosed {
-                Log.d(TAG, "USB device disconnected")
-                yubiKeyDevice.postValue(null)
-                eventSink?.success("deviceDisconnected")
-            }
-        }
-    }
-
-    private fun startNfcDiscovery() {
-        nfcDiscoveryEnabled = true
-        Log.d(TAG, "Starting NFC discovery")
-        try {
-            yubiKitManager.startNfcDiscovery(nfcConfiguration, activity) { device ->
-                Log.d(TAG, "NFC Session started $device")
-                yubiKeyDevice.postValue(device)
-                eventSink?.success("deviceConnected")
-            }
-        } catch (e: NfcNotAvailable) {
-            Log.e(TAG, "Error starting NFC listening", e)
-        }
-    }
-
-    private fun stopDiscovery() {
-        Log.d(TAG, "Stopping discovery")
-        nfcDiscoveryEnabled = false
-        yubiKeyDevice.value = null
-        yubiKeyDevice.removeObservers(activity)
-        yubiKitManager.stopNfcDiscovery(activity)
-        yubiKitManager.stopUsbDiscovery()
-    }
-
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         Log.d(TAG, "Attached to activity")
         activity = binding.activity as FlutterActivity
-        yubiKitManager = YubiKitManager(activity)
-        startDiscovery()
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
         Log.d(TAG, "Detatching for config changes")
-        yubiKitManager.stopNfcDiscovery(activity)
     }
 
     override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
         Log.d(TAG, "Reattaching from config changes")
         activity = binding.activity as FlutterActivity
-        if (nfcDiscoveryEnabled) {
-            startNfcDiscovery()
-        }
     }
 
     override fun onDetachedFromActivity() {
-        stopDiscovery()
     }
 
-    override fun onListen(arguments: Any?, eventSink: EventChannel.EventSink) {
-        this.eventSink = eventSink
-        Log.d(TAG, "Registering event sink")
-        if (yubiKeyDevice.value != null) {
-            eventSink.success("deviceConnected")
-        } else {
-            eventSink.success("deviceDisconnected")
-        }
-    }
-
-    override fun onCancel(arguments: Any?) {
-        Log.d(TAG, "Deregistering event sink")
-        this.eventSink = null
-    }
 }

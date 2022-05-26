@@ -22,7 +22,7 @@ abstract class SmartCardConnectionAction :
     protected fun result(data: ByteArray? = null): Pair<Int, Intent> {
         val result = Intent()
         if (data != null) {
-            result.putExtra("PIV_RESULT", data)
+            result.putExtra("SC_RESULT", data)
         }
         return Pair(Activity.RESULT_OK, result)
     }
@@ -30,7 +30,7 @@ abstract class SmartCardConnectionAction :
     protected fun intResult(data: Int? = null): Pair<Int, Intent> {
         val result = Intent()
         if (data != null) {
-            result.putExtra("PIV_RESULT", data)
+            result.putExtra("SC_RESULT", data)
         }
         return Pair(Activity.RESULT_OK, result)
     }
@@ -45,7 +45,7 @@ abstract class SmartCardConnectionAction :
             commandState.cancel()
             Log.e(TAG, "Something went wrong", e)
             val result = Intent()
-            result.putExtra("PIV_ERROR", e.localizedMessage)
+            result.putExtra("SC_ERROR", e.localizedMessage)
             Pair(Activity.RESULT_OK, result)
         }
     }

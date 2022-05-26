@@ -22,9 +22,6 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
         let instance = SwiftYubikitFlutterPlugin()
         let smartCardChannel = FlutterMethodChannel(name: "yubikit_flutter_sc", binaryMessenger: registrar.messenger())
         
-        let eventChannel = FlutterEventChannel(name: "yubikit_flutter_status", binaryMessenger: registrar.messenger())
-        eventChannel.setStreamHandler(instance.yubiKeyConnection)
-        
         registrar.addMethodCallDelegate(instance, channel: pivChannel)
         registrar.addMethodCallDelegate(instance, channel: smartCardChannel)
     }
@@ -38,16 +35,7 @@ public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
             logger.info("Smart Card handled")
             return
         } else {
-            switch(call.method) {
-                case "start":
-                    yubiKeyConnection.start()
-                    result(nil)
-                case "stop":
-                    yubiKeyConnection.stop()
-                    result(nil)
-                default:
-                    result(FlutterMethodNotImplemented)
-            }
+            result(FlutterMethodNotImplemented)
         }
     }
 

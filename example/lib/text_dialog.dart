@@ -1,20 +1,22 @@
 import 'package:flutter/material.dart';
 
-class NFCDialog extends StatelessWidget {
-  static Future<void> showNfcDialog(BuildContext context) async {
+class TextDialog extends StatelessWidget {
+  final String text;
+
+  static Future<void> showTextDialog(BuildContext context, String text) async {
     return await showDialog(
-        context: context, builder: (context) => const NFCDialog());
+        context: context, builder: (context) => TextDialog(text: text));
   }
 
-  const NFCDialog({Key? key}) : super(key: key);
+  const TextDialog({Key? key, required this.text}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       content: Column(
         mainAxisSize: MainAxisSize.min,
-        children: const [
-          Text("Remove NFC key"),
+        children: [
+          Text(text),
         ],
       ),
       actions: <Widget>[
