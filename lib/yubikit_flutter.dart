@@ -1,4 +1,3 @@
-import 'package:yubikit_openpgp/smartcard/pin_provider.dart';
 import 'package:yubikit_openpgp/yubikit_openpgp.dart';
 
 import 'piv/piv.dart';

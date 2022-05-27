@@ -18,6 +18,15 @@ public class YubikitFlutterPivHandler {
         self.yubiKeyConnection = yubiKeyConnection
     }
     
+    func handleError(error: Error?, result: @escaping FlutterResult) {
+        logger.error("Error! Reason: \(error!.localizedDescription)")
+        if let scError = error as? YKFSessionError {
+            result(FlutterError(code: "yubikit.smartcard.error", message: "\(scError.localizedDescription)", details: scError.code))
+        } else {
+            result(FlutterError(code: "yubikit.error", message: "\(error!.localizedDescription)", details: nil))
+        }
+    }
+    
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) -> Bool {
         func pivSession(completion: @escaping (_ session: YKFPIVSession)-> Void) {
             yubiKeyConnection.connection { connection in
@@ -25,8 +34,7 @@ public class YubikitFlutterPivHandler {
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
                     guard let session = session else {
-                        self.logger.error("Error! Reason: \(error!.localizedDescription)")
-                        result(FlutterError(code: "session.error", message: "\(error!.localizedDescription)", details: ""))
+                        self.handleError(error: error, result: result)
                         return
                     }
                     completion(session)

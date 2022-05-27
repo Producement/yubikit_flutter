@@ -1,6 +1,5 @@
 package com.producement.yubikit_flutter.piv
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -34,7 +33,7 @@ class PivGetCertificateAction : PivAction() {
         extras: Bundle,
         commandState: CommandState
     ): Pair<Int, Intent> {
-        try {
+        return tryWithCommand(commandState) {
             Log.d(TAG, "Yubikey connection created")
             val pin = extras.getString("PIV_PIN")!!
             val slot = extras.getInt("PIV_SLOT")
@@ -43,13 +42,7 @@ class PivGetCertificateAction : PivAction() {
 
             val certificate = pivSession.getCertificate(Slot.fromValue(slot))
             Log.d(TAG, "Certificate data")
-            return result(certificate.encoded)
-        } catch (e: Exception) {
-            commandState.cancel()
-            Log.e(TAG, "Something went wrong", e)
-            val result = Intent()
-            result.putExtra("PIV_ERROR", e.localizedMessage)
-            return Pair(Activity.RESULT_OK, result)
+            result(certificate.encoded)
         }
     }
 }

@@ -37,7 +37,7 @@ class PivDecryptAction : PivAction() {
         extras: Bundle,
         commandState: CommandState
     ): Pair<Int, Intent> {
-        try {
+        return tryWithCommand(commandState) {
             Log.d(TAG, "Yubikey connection created")
             val pin = extras.getString("PIV_PIN")!!
             val algorithm = extras.getString("PIV_ALGORITHM")!!
@@ -49,24 +49,18 @@ class PivDecryptAction : PivAction() {
             if (encryptionAlgorithm == null) {
                 val result = Intent()
                 result.putExtra("PIV_ERROR", "unsupported.algorithm.error")
-                return Pair(Activity.RESULT_OK, result)
+                Pair(Activity.RESULT_OK, result)
+            } else {
+                val decryptedData = pivSession.decrypt(
+                    Slot.fromValue(slot),
+                    message,
+                    encryptionAlgorithm,
+                )
+                Log.d(TAG, "Decrypted data")
+                val result = Intent()
+                result.putExtra("PIV_RESULT", decryptedData)
+                Pair(Activity.RESULT_OK, result)
             }
-
-            val decryptedData = pivSession.decrypt(
-                Slot.fromValue(slot),
-                message,
-                encryptionAlgorithm,
-            )
-            Log.d(TAG, "Decrypted data")
-            val result = Intent()
-            result.putExtra("PIV_RESULT", decryptedData)
-            return Pair(Activity.RESULT_OK, result)
-        } catch (e: Exception) {
-            commandState.cancel()
-            Log.e(TAG, "Something went wrong", e)
-            val result = Intent()
-            result.putExtra("PIV_ERROR", e.localizedMessage)
-            return Pair(Activity.RESULT_OK, result)
         }
     }
 

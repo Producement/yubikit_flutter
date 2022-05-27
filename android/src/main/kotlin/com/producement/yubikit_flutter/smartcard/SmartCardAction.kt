@@ -1,6 +1,5 @@
 package com.producement.yubikit_flutter.smartcard
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -39,7 +38,7 @@ class SmartCardAction : SmartCardConnectionAction() {
         extras: Bundle,
         commandState: CommandState
     ): Pair<Int, Intent> {
-        return try {
+        return tryWithCommand(commandState) {
             Log.d(TAG, "Starting Yubikey connection")
             val protocol = SmartCardProtocol(connection)
             val command = extras.getByteArray("SC_COMMAND")!!
@@ -49,7 +48,15 @@ class SmartCardAction : SmartCardConnectionAction() {
             protocol.select(application)
             if (verifyCommand != null && verifyCommand.isNotEmpty()) {
                 Log.d(TAG, "Executing verify command ${verifyCommand.toHex()}")
-                val result = connection.sendAndReceive(verifyCommand)
+                val result = protocol.sendAndReceive(
+                    Apdu(
+                        verifyCommand[0].toInt(),
+                        verifyCommand[1].toInt(),
+                        verifyCommand[2].toInt(),
+                        verifyCommand[3].toInt(),
+                        verifyCommand.drop(5).toByteArray()
+                    )
+                )
                 Log.d(TAG, "Result from verify: ${result.toHex()}")
             }
             result(
@@ -63,10 +70,6 @@ class SmartCardAction : SmartCardConnectionAction() {
                     )
                 )
             )
-        } catch (e: Exception) {
-            val result = Intent()
-            result.putExtra("SC_ERROR", e.localizedMessage)
-            Pair(Activity.RESULT_OK, result)
         }
     }
 }

@@ -1,3 +1,7 @@
+## 0.0.13
+
+* Better error handling.
+
 ## 0.0.12
 
 * Support NFC by making it possible to verify pin before each command.

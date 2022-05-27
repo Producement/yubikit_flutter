@@ -1,6 +1,5 @@
 package com.producement.yubikit_flutter.piv
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -14,7 +13,6 @@ import com.yubico.yubikit.piv.PivSession
 import com.yubico.yubikit.piv.Slot
 import java.security.KeyFactory
 import java.security.interfaces.ECPublicKey
-import java.security.spec.ECPublicKeySpec
 import java.security.spec.X509EncodedKeySpec
 
 class PivSecretKeyAction : PivAction() {
@@ -44,7 +42,7 @@ class PivSecretKeyAction : PivAction() {
         extras: Bundle,
         commandState: CommandState
     ): Pair<Int, Intent> {
-        return try {
+        return tryWithCommand(commandState) {
             val slot = extras.getInt("PIV_SLOT")
             val pin = extras.getString("PIV_PIN")!!
             val publicKeyData = extras.getByteArray("PIV_PUBLIC_KEY")
@@ -57,10 +55,6 @@ class PivSecretKeyAction : PivAction() {
             pivSession.authenticate(ManagementKeyType.fromValue(managementKeyType), managementKey)
             val key = pivSession.calculateSecret(Slot.fromValue(slot), publicKey as ECPublicKey)
             result(key)
-        } catch (e: Exception) {
-            val result = Intent()
-            result.putExtra("PIV_ERROR", e.localizedMessage)
-            Pair(Activity.RESULT_OK, result)
         }
     }
 }

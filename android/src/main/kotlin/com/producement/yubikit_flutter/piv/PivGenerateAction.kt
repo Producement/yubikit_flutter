@@ -1,6 +1,5 @@
 package com.producement.yubikit_flutter.piv
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -42,7 +41,7 @@ class PivGenerateAction : PivAction() {
         extras: Bundle,
         commandState: CommandState
     ): Pair<Int, Intent> {
-        try {
+        return tryWithCommand(commandState) {
             Log.d(TAG, "Yubikey connection created")
             val pin = extras.getString("PIV_PIN")!!
             val slot = extras.getInt("PIV_SLOT")
@@ -63,13 +62,7 @@ class PivGenerateAction : PivAction() {
                 TouchPolicy.fromValue(touchPolicy),
             )
             Log.d(TAG, "Generated private key")
-            return result(publicKey.encoded)
-        } catch (e: Exception) {
-            commandState.cancel()
-            Log.e(TAG, "Something went wrong", e)
-            val result = Intent()
-            result.putExtra("PIV_ERROR", e.localizedMessage)
-            return Pair(Activity.RESULT_OK, result)
+            result(publicKey.encoded)
         }
     }
 }

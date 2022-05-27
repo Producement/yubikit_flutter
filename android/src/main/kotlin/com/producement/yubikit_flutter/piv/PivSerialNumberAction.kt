@@ -1,6 +1,5 @@
 package com.producement.yubikit_flutter.piv
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -25,13 +24,9 @@ class PivSerialNumberAction : PivAction() {
         extras: Bundle,
         commandState: CommandState
     ): Pair<Int, Intent> {
-        return try {
+        return tryWithCommand(commandState) {
             val pivSession = PivSession(connection)
             intResult(pivSession.serialNumber)
-        } catch (e: Exception) {
-            val result = Intent()
-            result.putExtra("PIV_ERROR", e.localizedMessage)
-            Pair(Activity.RESULT_OK, result)
         }
     }
 }

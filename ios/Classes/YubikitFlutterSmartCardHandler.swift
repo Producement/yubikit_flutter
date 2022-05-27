@@ -26,14 +26,22 @@ public class YubikitFlutterSmartCardHandler {
         func runCommand(smartCardInterface: YKFSmartCardInterface, data: Data) {
             smartCardInterface.executeCommand(YKFAPDU(data: data)!, completion: { data, error in
                 guard let data = data else {
-                    self.logger.error("Failed to execute smart card command: \(error!.localizedDescription)")
-                    result(FlutterError(code: "smart.card.error", message: "\(error!.localizedDescription)", details: ""))
+                    handleError(error: error, result: result)
                     return
                 }
                 self.logger.info("Smart card command executed")
                 result(data)
                 self.yubiKeyConnection.stop()
             })
+        }
+        
+        func handleError(error: Error?, result: @escaping FlutterResult) {
+            logger.error("Error! Reason: \(error!.localizedDescription)")
+            if let scError = error as? YKFSessionError {
+                result(FlutterError(code: "yubikit.smartcard.error", message: "\(scError.localizedDescription)", details: scError.code))
+            } else {
+                result(FlutterError(code: "yubikit.error", message: "\(error!.localizedDescription)", details: nil))
+            }
         }
     
         
@@ -45,12 +53,12 @@ public class YubikitFlutterSmartCardHandler {
                 yubiKeyConnection.connection { connection in
                     guard let smartCardInterface = connection.smartCardInterface else {
                         self.logger.error("Smart card interface not present!")
-                        result(FlutterError(code: "smart.card.error", message: "Smart card not present", details: ""))
+                        result(FlutterError(code: "yubikit.error", message: "Smart card not present", details: nil))
                         return
                     }
                     guard let applicationApdu = YKFSelectApplicationAPDU(cla: 0x00, ins: 0xA4, p1: 0x04, p2: 0x00, data: application.data, type: .short) else {
                         self.logger.error("Failed to construct application APDU")
-                        result(FlutterError(code: "smart.card.error", message: "Application APDU invalid", details: ""))
+                        result(FlutterError(code: "yubikit.error", message: "Application APDU invalid", details: nil))
                         return
                     }
                     smartCardInterface.selectApplication(applicationApdu) { data, error in
@@ -58,20 +66,18 @@ public class YubikitFlutterSmartCardHandler {
                             self.logger.error("Failed to select application, trying to activate: \(error!.localizedDescription)")
                             guard let activateApdu = YKFAPDU(cla: 0x00, ins: 0x44, p1: 0x00, p2: 0x00, data:Data(), type: .short) else {
                                 self.logger.error("Failed to construct activate APDU")
-                                result(FlutterError(code: "smart.card.error", message: "Activate APDU invalid", details: ""))
+                                result(FlutterError(code: "yubikit.error", message: "Activate APDU invalid", details: ""))
                                 return
                             }
                             smartCardInterface.executeCommand(activateApdu, completion: { data, error in
                                 if error != nil {
-                                    self.logger.error("Failed to execute smart card command: \(error!.localizedDescription)")
-                                    result(FlutterError(code: "smart.card.error", message: "\(error!.localizedDescription)", details: ""))
+                                    handleError(error: error, result: result)
                                     return
                                 }
                                 self.logger.info("Smart card activation executed")
                                 smartCardInterface.selectApplication(applicationApdu) { data, error in
                                     if error != nil {
-                                        self.logger.error("Failed to execute smart card select application command: \(error!.localizedDescription)")
-                                        result(FlutterError(code: "smart.card.error", message: "\(error!.localizedDescription)", details: ""))
+                                        handleError(error: error, result: result)
                                         return
                                     }
                                     self.logger.debug("Received command: \(apdu.data.hexDescription)")

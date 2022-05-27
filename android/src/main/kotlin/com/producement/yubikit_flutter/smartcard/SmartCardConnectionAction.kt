@@ -6,6 +6,7 @@ import android.util.Log
 import com.producement.yubikit_flutter.piv.PivSignAction
 import com.yubico.yubikit.android.ui.YubiKeyPromptConnectionAction
 import com.yubico.yubikit.core.application.CommandState
+import com.yubico.yubikit.core.smartcard.ApduException
 import com.yubico.yubikit.core.smartcard.SmartCardConnection
 import com.yubico.yubikit.core.util.Pair
 import com.yubico.yubikit.piv.KeyType
@@ -46,6 +47,9 @@ abstract class SmartCardConnectionAction :
             Log.e(TAG, "Something went wrong", e)
             val result = Intent()
             result.putExtra("SC_ERROR", e.localizedMessage)
+            if (e is ApduException) {
+                result.putExtra("SC_ERROR_DETAILS", e.sw)
+            }
             Pair(Activity.RESULT_OK, result)
         }
     }

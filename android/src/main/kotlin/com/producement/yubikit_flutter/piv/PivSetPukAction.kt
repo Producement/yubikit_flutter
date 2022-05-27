@@ -1,6 +1,5 @@
 package com.producement.yubikit_flutter.piv
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
@@ -28,17 +27,13 @@ class PivSetPukAction : PivAction() {
         extras: Bundle,
         commandState: CommandState
     ): Pair<Int, Intent> {
-        return try {
+        return tryWithCommand(commandState) {
             val oldPuk = extras.getString("PIV_OLD_PUK")!!
             val newPuk = extras.getString("PIV_NEW_PUK")!!
 
             val pivSession = PivSession(connection)
             pivSession.changePuk(oldPuk.toCharArray(), newPuk.toCharArray())
             result()
-        } catch (e: Exception) {
-            val result = Intent()
-            result.putExtra("PIV_ERROR", e.localizedMessage)
-            Pair(Activity.RESULT_OK, result)
         }
     }
 }

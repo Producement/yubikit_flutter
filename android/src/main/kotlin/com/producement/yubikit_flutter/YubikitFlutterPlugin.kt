@@ -91,6 +91,8 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
         activityPluginBinding.removeActivityResultListener(this)
     }
 
+    data class SmartCardException(override val message: String, val sw: Short) : Exception()
+
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean {
         val responseData = this.responseData
         if (responseData != null) {
@@ -98,11 +100,12 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
                 responseData.postValue(Result.failure<Exception>(java.lang.Exception("User canceled")))
             } else if (data != null && data.hasExtra("SC_ERROR")) {
                 responseData.postValue(
-                    Result.failure<Exception>(
-                        Exception(
+                    Result.failure<SmartCardException>(
+                        SmartCardException(
                             data.getStringExtra(
                                 "SC_ERROR"
-                            )
+                            )!!,
+                            data.getShortExtra("SC_ERROR_DETAILS", 0)
                         )
                     )
                 )
@@ -136,11 +139,19 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
             Log.d(TAG, "Observers removed")
             newValue.onFailure { t ->
                 Log.d(TAG, "Received error")
-                result.error(
-                    "yubikit.error",
-                    t.message,
-                    ""
-                )
+                if (t is SmartCardException) {
+                    result.error(
+                        "yubikit.smartcard.error",
+                        t.message,
+                        t.sw,
+                    )
+                } else {
+                    result.error(
+                        "yubikit.error",
+                        t.message,
+                        null
+                    )
+                }
             }
             newValue.onSuccess { t ->
                 Log.d(TAG, "Received success")

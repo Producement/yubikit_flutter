@@ -44,7 +44,7 @@ class PivPutCertificateAction : PivAction() {
         extras: Bundle,
         commandState: CommandState
     ): Pair<Int, Intent> {
-        try {
+        return tryWithCommand(commandState) {
             Log.d(TAG, "Yubikey connection created")
             val pin = extras.getString("PIV_PIN")!!
             val slot = extras.getInt("PIV_SLOT")
@@ -58,13 +58,8 @@ class PivPutCertificateAction : PivAction() {
             val certificate = cf.generateCertificate(ByteArrayInputStream(certificateData))
             pivSession.putCertificate(Slot.fromValue(slot), certificate as X509Certificate)
             Log.d(TAG, "Certificate data")
-            return result()
-        } catch (e: Exception) {
-            commandState.cancel()
-            Log.e(TAG, "Something went wrong", e)
-            val result = Intent()
-            result.putExtra("PIV_ERROR", e.localizedMessage)
-            return Pair(Activity.RESULT_OK, result)
+            result()
         }
+
     }
 }
