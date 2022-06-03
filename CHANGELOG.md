@@ -1,3 +1,7 @@
+## 0.0.15
+
+* Ignore terminated card error on selection smart card application
+
 ## 0.0.14
 
 * Catch exceptions that are caused by AbduException

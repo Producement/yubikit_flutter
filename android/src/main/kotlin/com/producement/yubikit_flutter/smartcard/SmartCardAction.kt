@@ -2,12 +2,14 @@ package com.producement.yubikit_flutter.smartcard
 
 import android.content.Context
 import android.content.Intent
+import android.nfc.Tag
 import android.os.Bundle
 import android.util.Log
 import com.producement.yubikit_flutter.toHex
 import com.yubico.yubikit.android.ui.YubiKeyPromptActivity
 import com.yubico.yubikit.core.application.CommandState
 import com.yubico.yubikit.core.smartcard.Apdu
+import com.yubico.yubikit.core.smartcard.ApduException
 import com.yubico.yubikit.core.smartcard.SmartCardConnection
 import com.yubico.yubikit.core.smartcard.SmartCardProtocol
 import com.yubico.yubikit.core.util.Pair
@@ -45,7 +47,7 @@ class SmartCardAction : SmartCardConnectionAction() {
             val verifyCommand = extras.getByteArray("SC_VERIFY")
             val application = extras.getByteArray("SC_APPLICATION")!!
             Log.d(TAG, "Executing command ${command.toHex()} on application ${application.toHex()}")
-            protocol.select(application)
+            selectProtocol(protocol, application)
             if (verifyCommand != null && verifyCommand.isNotEmpty()) {
                 Log.d(TAG, "Executing verify command ${verifyCommand.toHex()}")
                 val result = protocol.sendAndReceive(
@@ -70,6 +72,17 @@ class SmartCardAction : SmartCardConnectionAction() {
                     )
                 )
             )
+        }
+    }
+
+    private fun selectProtocol(
+        protocol: SmartCardProtocol,
+        application: ByteArray
+    ) {
+        try {
+            protocol.select(application)
+        } catch (e: ApduException) {
+            Log.w(TAG, e.message.toString(), e)
         }
     }
 }
