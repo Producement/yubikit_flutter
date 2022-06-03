@@ -1,3 +1,7 @@
+## 0.0.16
+
+* Activate a terminated card when selecting application
+
 ## 0.0.15
 
 * Ignore terminated card error on selection smart card application

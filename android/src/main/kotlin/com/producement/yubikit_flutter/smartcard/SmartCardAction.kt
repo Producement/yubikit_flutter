@@ -2,16 +2,12 @@ package com.producement.yubikit_flutter.smartcard
 
 import android.content.Context
 import android.content.Intent
-import android.nfc.Tag
 import android.os.Bundle
 import android.util.Log
 import com.producement.yubikit_flutter.toHex
 import com.yubico.yubikit.android.ui.YubiKeyPromptActivity
 import com.yubico.yubikit.core.application.CommandState
-import com.yubico.yubikit.core.smartcard.Apdu
-import com.yubico.yubikit.core.smartcard.ApduException
-import com.yubico.yubikit.core.smartcard.SmartCardConnection
-import com.yubico.yubikit.core.smartcard.SmartCardProtocol
+import com.yubico.yubikit.core.smartcard.*
 import com.yubico.yubikit.core.util.Pair
 
 class SmartCardAction : SmartCardConnectionAction() {
@@ -47,7 +43,8 @@ class SmartCardAction : SmartCardConnectionAction() {
             val verifyCommand = extras.getByteArray("SC_VERIFY")
             val application = extras.getByteArray("SC_APPLICATION")!!
             Log.d(TAG, "Executing command ${command.toHex()} on application ${application.toHex()}")
-            selectProtocol(protocol, application)
+
+            selectApplication(protocol, application)
             if (verifyCommand != null && verifyCommand.isNotEmpty()) {
                 Log.d(TAG, "Executing verify command ${verifyCommand.toHex()}")
                 val result = protocol.sendAndReceive(
@@ -75,14 +72,29 @@ class SmartCardAction : SmartCardConnectionAction() {
         }
     }
 
-    private fun selectProtocol(
+    private fun selectApplication(
         protocol: SmartCardProtocol,
         application: ByteArray
     ) {
         try {
             protocol.select(application)
         } catch (e: ApduException) {
-            Log.w(TAG, e.message.toString(), e)
+            if (isTerminated(e)) {
+                activateCardAndResume(protocol, application)
+            } else {
+                Log.w(TAG, e.message.toString(), e)
+            }
         }
+    }
+
+    private fun isTerminated(e: ApduException) =
+        e.sw == SW.CONDITIONS_NOT_SATISFIED || e.sw == SW.NO_INPUT_DATA
+
+    private fun activateCardAndResume(
+        protocol: SmartCardProtocol,
+        application: ByteArray
+    ) {
+        protocol.sendAndReceive(Apdu(0, 0x47, 0, 0, null))
+        protocol.select(application)
     }
 }
