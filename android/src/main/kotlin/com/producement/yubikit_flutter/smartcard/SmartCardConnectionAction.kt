@@ -47,8 +47,11 @@ abstract class SmartCardConnectionAction :
             Log.e(TAG, "Something went wrong", e)
             val result = Intent()
             result.putExtra("SC_ERROR", e.localizedMessage)
+            val cause = e.cause
             if (e is ApduException) {
                 result.putExtra("SC_ERROR_DETAILS", e.sw)
+            } else if (cause is ApduException) {
+                result.putExtra("SC_ERROR_DETAILS", cause.sw)
             }
             Pair(Activity.RESULT_OK, result)
         }

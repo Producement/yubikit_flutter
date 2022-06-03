@@ -1,3 +1,7 @@
+## 0.0.14
+
+* Catch exceptions that are caused by AbduException
+
 ## 0.0.13
 
 * Better error handling.
