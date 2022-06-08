@@ -12,8 +12,11 @@ class YubikitFlutterSmartCard extends SmartCardInterface {
   Future<Uint8List> sendCommand(Application application, List<int> input,
       {List<int>? verify}) async {
     try {
-      return await _channel.invokeMethod('sendCommand',
-          [input, application.value, Uint8List.fromList(verify ?? [])]);
+      return await _channel.invokeMethod('sendCommand', [
+        Uint8List.fromList(input),
+        application.value,
+        Uint8List.fromList(verify ?? [])
+      ]);
     } on PlatformException catch (e) {
       if (e.code == 'yubikit.smartcard.error') {
         int sws = e.details;

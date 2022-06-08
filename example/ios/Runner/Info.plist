@@ -2,14 +2,8 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
-	<array>
-		<string>A000000527471117</string>
-		<string>A0000006472F0001</string>
-		<string>A0000005272101</string>
-		<string>A000000308</string>
-		<string>A000000527200101</string>
-	</array>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -57,7 +51,14 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<false/>
-	<key>CADisableMinimumFrameDurationOnPhone</key>
-	<true/>
+	<key>com.apple.developer.nfc.readersession.iso7816.select-identifiers</key>
+	<array>
+		<string>A000000527471117</string>
+		<string>A0000006472F0001</string>
+		<string>A0000005272101</string>
+		<string>A000000308</string>
+		<string>A000000527200101</string>
+		<string>A000000003000000</string>
+	</array>
 </dict>
 </plist>

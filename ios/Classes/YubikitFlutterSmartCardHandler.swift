@@ -23,16 +23,34 @@ public class YubikitFlutterSmartCardHandler {
             return (call.arguments as! Array<Any>)[index] as! T
         }
         
-        func runCommand(smartCardInterface: YKFSmartCardInterface, data: Data) {
-            smartCardInterface.executeCommand(YKFAPDU(data: data)!, completion: { data, error in
-                guard let data = data else {
-                    handleError(error: error, result: result)
-                    return
-                }
-                self.logger.info("Smart card command executed")
-                result(data)
-                self.yubiKeyConnection.stop()
-            })
+        func runCommand(smartCardInterface: YKFSmartCardInterface, data: Data, verify: Data?) {
+            if(!(verify?.isEmpty ?? true)) {
+                smartCardInterface.executeCommand(YKFAPDU(data: verify!)!, completion: { data, error in
+                    guard let data = data else {
+                        handleError(error: error, result: result)
+                        return
+                    }
+                    smartCardInterface.executeCommand(YKFAPDU(data: data)!, completion: { data, error in
+                        guard let data = data else {
+                            handleError(error: error, result: result)
+                            return
+                        }
+                        self.logger.info("Smart card command executed")
+                        self.yubiKeyConnection.stop()
+                        result(data)
+                    })
+                });
+            } else {
+                smartCardInterface.executeCommand(YKFAPDU(data: data)!, completion: { data, error in
+                    guard let data = data else {
+                        handleError(error: error, result: result)
+                        return
+                    }
+                    self.logger.info("Smart card command executed")
+                    self.yubiKeyConnection.stop()
+                    result(data)
+                })
+            }
         }
         
         func handleError(error: Error?, result: @escaping FlutterResult) {
@@ -49,6 +67,7 @@ public class YubikitFlutterSmartCardHandler {
             case "sendCommand":
                 let apdu: FlutterStandardTypedData = argument(0)
                 let application: FlutterStandardTypedData = argument(1)
+                let verify = (call.arguments as! Array<Any?>)[2] as? FlutterStandardTypedData
                 self.logger.debug("Received select application command: \(application.data.hexDescription)")
                 yubiKeyConnection.connection { connection in
                     guard let smartCardInterface = connection.smartCardInterface else {
@@ -81,12 +100,12 @@ public class YubikitFlutterSmartCardHandler {
                                         return
                                     }
                                     self.logger.debug("Received command: \(apdu.data.hexDescription)")
-                                    runCommand(smartCardInterface: smartCardInterface, data: apdu.data)
+                                    runCommand(smartCardInterface: smartCardInterface, data: apdu.data, verify: verify?.data)
                                 }
                             })
                         } else {
                             self.logger.debug("Received command: \(apdu.data.hexDescription)")
-                            runCommand(smartCardInterface: smartCardInterface, data: apdu.data)
+                            runCommand(smartCardInterface: smartCardInterface, data: apdu.data, verify: verify?.data)
                         }
                         
                     }

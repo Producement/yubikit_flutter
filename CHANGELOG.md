@@ -1,3 +1,7 @@
+## 0.0.17
+
+* Fix a bug where iOS was not working when running multiple commands over NFC.
+
 ## 0.0.16
 
 * Activate a terminated card when selecting application
@@ -8,7 +12,7 @@
 
 ## 0.0.14
 
-* Catch exceptions that are caused by AbduException
+* Catch exceptions that are caused by ApduException
 
 ## 0.0.13
 
