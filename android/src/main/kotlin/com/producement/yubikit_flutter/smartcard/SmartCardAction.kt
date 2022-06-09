@@ -9,6 +9,7 @@ import com.yubico.yubikit.android.ui.YubiKeyPromptActivity
 import com.yubico.yubikit.core.application.CommandState
 import com.yubico.yubikit.core.smartcard.*
 import com.yubico.yubikit.core.util.Pair
+import java.io.IOException
 
 class SmartCardAction : SmartCardConnectionAction() {
 
@@ -78,8 +79,9 @@ class SmartCardAction : SmartCardConnectionAction() {
     ) {
         try {
             protocol.select(application)
-        } catch (e: ApduException) {
-            if (isTerminated(e)) {
+        } catch (e: IOException) {
+            val cause = e.cause
+            if (cause is ApduException && isTerminated(cause)) {
                 activateCardAndResume(protocol, application)
             } else {
                 Log.w(TAG, e.message.toString(), e)
@@ -94,7 +96,8 @@ class SmartCardAction : SmartCardConnectionAction() {
         protocol: SmartCardProtocol,
         application: ByteArray
     ) {
-        protocol.sendAndReceive(Apdu(0, 0x47, 0, 0, null))
+        val activateFileCommand = Apdu(0, 0x44, 0, 0, null)
+        protocol.sendAndReceive(activateFileCommand)
         protocol.select(application)
     }
 }

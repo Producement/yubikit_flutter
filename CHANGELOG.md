@@ -1,3 +1,7 @@
+## 0.0.18
+
+* Activate a terminated card when selecting application
+
 ## 0.0.17
 
 * Fix a bug where iOS was not working when running multiple commands over NFC.
