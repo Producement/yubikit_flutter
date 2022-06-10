@@ -1,3 +1,7 @@
+## 0.0.19
+
+* Fix timing issues in iOS
+
 ## 0.0.18
 
 * Activate a terminated card when selecting application

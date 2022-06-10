@@ -28,6 +28,12 @@
 	<true/>
 	<key>NFCReaderUsageDescription</key>
 	<string>The application needs access to NFC reading to communicate with your YubiKey.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_dartobservatory._tcp</string>
+	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string></string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

@@ -57,6 +57,8 @@ extension YubiKeyConnection: YKFManagerDelegate {
             callback(connection)
             connectionCallback = nil
             logger.info("NFC connection callback completed")
+        } else {
+            logger.error("No NFC callback!")
         }
     }
     

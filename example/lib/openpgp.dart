@@ -58,7 +58,7 @@ class _OpenPGPPageState extends State<OpenPGPPage> {
                 if (!mounted) return;
                 await TextDialog.showTextDialog(context, 'Public key: $key');
               },
-              child: const Text("Get encryption pubkey")),
+              child: const Text("Get encryption EC pubkey")),
           ElevatedButton(
               onPressed: () async {
                 final key = await interface.generateECKey(
@@ -66,7 +66,7 @@ class _OpenPGPPageState extends State<OpenPGPPage> {
                 if (!mounted) return;
                 await TextDialog.showTextDialog(context, 'Public key: $key');
               },
-              child: const Text("Generate encryption key")),
+              child: const Text("Generate encryption EC key")),
           ElevatedButton(
               onPressed: () async {
                 await interface.reset();
