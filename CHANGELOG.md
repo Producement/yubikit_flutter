@@ -1,4 +1,9 @@
-## 0.0.21
+
+## 0.0.23
+
+* Bump yubikit_openpgp version.
+
+## 0.0.22
 
 * Bump yubikit_openpgp version.
 
