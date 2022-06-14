@@ -2,6 +2,10 @@
 
 * Bump yubikit_openpgp version.
 
+## 0.0.21
+
+* Bump yubikit_openpgp version.
+
 ## 0.0.20
 
 * RSA support.
