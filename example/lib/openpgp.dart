@@ -1,7 +1,9 @@
 import 'dart:typed_data';
 
+import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:yubikit_flutter/yubikit_flutter.dart';
+import 'package:yubikit_openpgp/key_data.dart';
 
 import 'openpgp_info.dart';
 import 'text_dialog.dart';
@@ -54,9 +56,15 @@ class _OpenPGPPageState extends State<OpenPGPPage> {
               child: const Text("Info")),
           ElevatedButton(
               onPressed: () async {
-                final key = await interface.getECPublicKey(KeySlot.encryption);
+                final key = await interface.getPublicKey(KeySlot.encryption);
                 if (!mounted) return;
-                await TextDialog.showTextDialog(context, 'Public key: $key');
+                if (key is RSAKeyData) {
+                  await TextDialog.showTextDialog(context,
+                      'RSA key: ${hex.encode(key.modulus)} ${hex.encode(key.exponent)}');
+                } else if (key is ECKeyData) {
+                  await TextDialog.showTextDialog(
+                      context, 'EC Key: ${hex.encode(key.publicKey)}');
+                }
               },
               child: const Text("Get encryption EC pubkey")),
           ElevatedButton(

@@ -1,3 +1,7 @@
+## 0.0.20
+
+* RSA support.
+
 ## 0.0.19
 
 * Fix timing issues in iOS

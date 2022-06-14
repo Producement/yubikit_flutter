@@ -44,7 +44,7 @@ packages:
     source: hosted
     version: "1.16.0"
   convert:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: convert
       url: "https://pub.dartlang.org"
@@ -204,14 +204,14 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "0.0.18"
+    version: "0.0.19"
   yubikit_openpgp:
     dependency: "direct main"
     description:
       name: yubikit_openpgp
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.7"
+    version: "1.0.8"
 sdks:
   dart: ">=2.17.0-206.0.dev <3.0.0"
   flutter: ">=2.5.0"
