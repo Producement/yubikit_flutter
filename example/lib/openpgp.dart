@@ -3,7 +3,6 @@ import 'dart:typed_data';
 import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
 import 'package:yubikit_flutter/yubikit_flutter.dart';
-import 'package:yubikit_openpgp/key_data.dart';
 
 import 'openpgp_info.dart';
 import 'text_dialog.dart';
