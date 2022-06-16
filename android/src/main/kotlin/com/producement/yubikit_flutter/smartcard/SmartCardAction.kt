@@ -17,13 +17,13 @@ class SmartCardAction : SmartCardConnectionAction() {
         private const val TAG = "SmartCardAction"
         fun smartCardIntent(
             context: Context,
-            command: ByteArray,
+            commands: List<ByteArray>,
             verifyCommand: ByteArray?,
             application: ByteArray,
         ): Intent {
             Log.d(TAG, "Creating intent")
             return YubiKeyPromptActivity.createIntent(context, SmartCardAction::class.java).also {
-                it.putExtra("SC_COMMAND", command)
+                it.putExtra("SC_COMMANDS", commands.toTypedArray())
                 it.putExtra("SC_APPLICATION", application)
                 verifyCommand?.let { cmd ->
                     it.putExtra("SC_VERIFY", cmd)
@@ -40,10 +40,10 @@ class SmartCardAction : SmartCardConnectionAction() {
         return tryWithCommand(commandState) {
             Log.d(TAG, "Starting Yubikey connection")
             val protocol = SmartCardProtocol(connection)
-            val command = extras.getByteArray("SC_COMMAND")!!
+            val commands = extras.getSerializable("SC_COMMANDS") as Array<ByteArray>
             val verifyCommand = extras.getByteArray("SC_VERIFY")
             val application = extras.getByteArray("SC_APPLICATION")!!
-            Log.d(TAG, "Executing command ${command.toHex()} on application ${application.toHex()}")
+
 
             selectApplication(protocol, application)
             if (verifyCommand != null && verifyCommand.isNotEmpty()) {
@@ -59,7 +59,11 @@ class SmartCardAction : SmartCardConnectionAction() {
                 )
                 Log.d(TAG, "Result from verify: ${result.toHex()}")
             }
-            result(
+            result(commands.map { command ->
+                Log.d(
+                    TAG,
+                    "Executing command ${command.toHex()} on application ${application.toHex()}"
+                )
                 protocol.sendAndReceive(
                     Apdu(
                         command[0].toInt(),
@@ -69,6 +73,8 @@ class SmartCardAction : SmartCardConnectionAction() {
                         command.drop(5).toByteArray()
                     )
                 )
+
+            }
             )
         }
     }

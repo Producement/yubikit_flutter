@@ -1,3 +1,6 @@
+## 0.0.24
+
+* Support command batching.
 
 ## 0.0.23
 

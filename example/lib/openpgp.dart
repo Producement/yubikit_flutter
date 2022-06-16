@@ -50,7 +50,8 @@ class _OpenPGPPageState extends State<OpenPGPPage> {
         children: [
           ElevatedButton(
               onPressed: () async {
-                await OpenPGPInfo.showOpenPGPInfo(context, interface);
+                await OpenPGPInfoWidget.showOpenPGPInfo(
+                    context, YubikitFlutter.smartCard());
               },
               child: const Text("Info")),
           ElevatedButton(

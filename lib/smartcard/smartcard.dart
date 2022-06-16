@@ -9,14 +9,16 @@ class YubikitFlutterSmartCard extends SmartCardInterface {
   const YubikitFlutterSmartCard();
 
   @override
-  Future<Uint8List> sendCommand(Application application, List<int> input,
+  Future<Stream<Uint8List>> sendCommands(
+      Application application, List<List<int>> input,
       {List<int>? verify}) async {
     try {
-      return await _channel.invokeMethod('sendCommand', [
-        Uint8List.fromList(input),
+      List<Object?> result = await _channel.invokeMethod('sendCommands', [
+        input.map((e) => Uint8List.fromList(e)).toList(),
         application.value,
         Uint8List.fromList(verify ?? [])
       ]);
+      return Stream.fromIterable(result.whereType<Uint8List>());
     } on PlatformException catch (e) {
       if (e.code == 'yubikit.smartcard.error') {
         int sws = e.details;

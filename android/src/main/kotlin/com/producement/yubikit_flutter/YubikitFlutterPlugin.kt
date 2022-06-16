@@ -9,7 +9,6 @@ import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
-import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.PluginRegistry
 
@@ -112,9 +111,14 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
             } else if (data != null) {
                 when (requestCode) {
                     SIGNATURE_REQUEST, DECRYPT_REQUEST, GENERATE_REQUEST,
-                    GET_CERTIFICATE_REQUEST, SECRET_KEY_REQUEST, SMART_CARD_REQUEST -> responseData.postValue(
+                    GET_CERTIFICATE_REQUEST, SECRET_KEY_REQUEST -> responseData.postValue(
                         Result.success(
                             data.getByteArrayExtra("SC_RESULT")
+                        )
+                    )
+                    SMART_CARD_REQUEST -> responseData.postValue(
+                        Result.success(
+                            data.getSerializableExtra("SC_RESULTS")
                         )
                     )
                     SERIAL_NUMBER_REQUEST -> responseData.postValue(

@@ -28,6 +28,12 @@ abstract class SmartCardConnectionAction :
         return Pair(Activity.RESULT_OK, result)
     }
 
+    protected fun result(data: List<ByteArray>): Pair<Int, Intent> {
+        val result = Intent()
+        result.putExtra("SC_RESULTS", ArrayList(data))
+        return Pair(Activity.RESULT_OK, result)
+    }
+
     protected fun intResult(data: Int? = null): Pair<Int, Intent> {
         val result = Intent()
         if (data != null) {
