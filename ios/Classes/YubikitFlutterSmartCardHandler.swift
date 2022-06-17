@@ -45,17 +45,35 @@ public class YubikitFlutterSmartCardHandler {
                     return
                 }
             }
-            do {
             var results: [Data]  = []
-            for command in commands {
-                if let cmd = command as? FlutterStandardTypedData {
-                    let response = try await runCommand(smartCardInterface: smartCardInterface, data: cmd.data)
-                    results.append(response)
+            let hasMoreThanOneCommand = commands.count > 1
+            if hasMoreThanOneCommand {
+                for command in commands {
+                    do {
+                        if let cmd = command as? FlutterStandardTypedData {
+                            let response = try await runCommand(smartCardInterface: smartCardInterface, data: cmd.data)
+                            results.append(response)
+                        }
+                    } catch {
+                        if let scError = error as? YKFSessionError {
+                            results.append(Data(withUnsafeBytes(of: Int16(scError.code).bigEndian, Array.init)))
+                        } else {
+                            handleError(error: error)
+                            return
+                        }
+                    }
                 }
-            }
-            sendResult(results)
-            } catch {
-                handleError(error: error)
+                sendResult(results)
+            } else {
+                do {
+                    if let cmd = commands[0] as? FlutterStandardTypedData {
+                        let response = try await runCommand(smartCardInterface: smartCardInterface, data: cmd.data)
+                        results.append(response)
+                        sendResult(results)
+                    }
+                } catch {
+                    handleError(error: error)
+                }
             }
         }
         

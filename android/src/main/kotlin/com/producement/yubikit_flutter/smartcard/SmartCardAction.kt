@@ -10,6 +10,7 @@ import com.yubico.yubikit.core.application.CommandState
 import com.yubico.yubikit.core.smartcard.*
 import com.yubico.yubikit.core.util.Pair
 import java.io.IOException
+import java.nio.ByteBuffer
 
 class SmartCardAction : SmartCardConnectionAction() {
 
@@ -59,23 +60,48 @@ class SmartCardAction : SmartCardConnectionAction() {
                 )
                 Log.d(TAG, "Result from verify: ${result.toHex()}")
             }
-            result(commands.map { command ->
+            if (commands.size == 1) {
+                val command = commands.first()
                 Log.d(
                     TAG,
                     "Executing command ${command.toHex()} on application ${application.toHex()}"
                 )
-                protocol.sendAndReceive(
-                    Apdu(
-                        command[0].toInt(),
-                        command[1].toInt(),
-                        command[2].toInt(),
-                        command[3].toInt(),
-                        command.drop(5).toByteArray()
+                result(
+                    protocol.sendAndReceive(
+                        Apdu(
+                            command[0].toInt(),
+                            command[1].toInt(),
+                            command[2].toInt(),
+                            command[3].toInt(),
+                            command.drop(5).toByteArray()
+                        )
                     )
                 )
+            } else {
+                result(commands.map { command ->
+                    Log.d(
+                        TAG,
+                        "Executing command ${command.toHex()} on application ${application.toHex()}"
+                    )
+                    try {
+                        protocol.sendAndReceive(
+                            Apdu(
+                                command[0].toInt(),
+                                command[1].toInt(),
+                                command[2].toInt(),
+                                command[3].toInt(),
+                                command.drop(5).toByteArray()
+                            )
+                        )
+                    } catch (e: ApduException) {
+                        val buffer = ByteBuffer.allocate(2)
+                        buffer.putShort(e.sw)
+                        buffer.array()
+                    }
 
+                }
+                )
             }
-            )
         }
     }
 

@@ -1,3 +1,7 @@
+## 0.0.25
+
+* Command batching with failures not stopping the batch.
+
 ## 0.0.24
 
 * Support command batching.
