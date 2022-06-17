@@ -1,3 +1,7 @@
+## 0.0.27
+
+* Update yubikit_openpgp version.
+
 ## 0.0.26
 
 * Update yubikit_openpgp version.
