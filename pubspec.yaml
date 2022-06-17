@@ -1,6 +1,6 @@
 name: yubikit_flutter
 description: Wrapper for YubiKit iOS and Android SDKs
-version: 0.0.25
+version: 0.0.26
 homepage: https://github.com/Producement/yubikit_flutter
 
 environment:
@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  yubikit_openpgp: ^1.0.16
+  yubikit_openpgp: ^1.0.17
 
 dev_dependencies:
   test: ^1.19.5

@@ -40,6 +40,24 @@ class OpenPGPPage extends StatelessWidget {
           ElevatedButton(
               onPressed: () async {
                 await YubikitFlutter.openPGP()
+                    .rsaSign([0x00, 0x01, 0x02]).then((key) async {
+                  await TextDialog.showTextDialog(
+                      context, 'RSA signature: ${hex.encode(key)}');
+                });
+              },
+              child: const Text("RSA sign")),
+          ElevatedButton(
+              onPressed: () async {
+                await YubikitFlutter.openPGP()
+                    .ecSign([0x00, 0x01, 0x02]).then((key) async {
+                  await TextDialog.showTextDialog(
+                      context, 'EC signature: ${hex.encode(key)}');
+                });
+              },
+              child: const Text("EC sign")),
+          ElevatedButton(
+              onPressed: () async {
+                await YubikitFlutter.openPGP()
                     .generateECKey(KeySlot.encryption, ECCurve.x25519)
                     .then((key) async {
                   await TextDialog.showTextDialog(context, 'Public key: $key');

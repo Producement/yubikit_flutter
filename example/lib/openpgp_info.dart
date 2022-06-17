@@ -22,7 +22,8 @@ class OpenPGPInfoWidget extends StatelessWidget {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text("OpenPGP version: ${openPGPInfo.openPGPVersion}"),
+          Text(
+              "OpenPGP version: ${openPGPInfo.openPGPVersion.major}.${openPGPInfo.openPGPVersion.minor}"),
           const Text(""),
           Text("PIN tries remaining: ${openPGPInfo.retries.pin}"),
           Text("Reset code tries remaining: ${openPGPInfo.retries.reset}"),
