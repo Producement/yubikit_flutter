@@ -46,35 +46,22 @@ public class YubikitFlutterSmartCardHandler {
                 }
             }
             var results: [Data]  = []
-            let hasMoreThanOneCommand = commands.count > 1
-            if hasMoreThanOneCommand {
-                for command in commands {
-                    do {
-                        if let cmd = command as? FlutterStandardTypedData {
-                            let response = try await runCommand(smartCardInterface: smartCardInterface, data: cmd.data)
-                            results.append(response)
-                        }
-                    } catch {
-                        if let scError = error as? YKFSessionError {
-                            results.append(Data(withUnsafeBytes(of: Int16(scError.code).bigEndian, Array.init)))
-                        } else {
-                            handleError(error: error)
-                            return
-                        }
-                    }
-                }
-                sendResult(results)
-            } else {
+            for command in commands {
                 do {
-                    if let cmd = commands[0] as? FlutterStandardTypedData {
+                    if let cmd = command as? FlutterStandardTypedData {
                         let response = try await runCommand(smartCardInterface: smartCardInterface, data: cmd.data)
                         results.append(response)
-                        sendResult(results)
                     }
                 } catch {
-                    handleError(error: error)
+                    if let scError = error as? YKFSessionError {
+                        results.append(Data(withUnsafeBytes(of: Int16(scError.code).bigEndian, Array.init)))
+                    } else {
+                        handleError(error: error)
+                        return
+                    }
                 }
             }
+            sendResult(results)
         }
         
         @Sendable func runCommand(smartCardInterface: YKFSmartCardInterface, data: Data) async throws -> Data {

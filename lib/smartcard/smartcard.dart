@@ -23,6 +23,9 @@ class YubikitFlutterSmartCard extends SmartCardInterface {
           .map((e) => SmartCardResponse.fromBytes(e));
       return Stream.fromIterable(responses);
     } on PlatformException catch (e) {
+      if (e.message == 'Tag was lost.' || e.message == 'Tag connection lost') {
+        throw TagLostException();
+      }
       if (e.code == 'yubikit.smartcard.error') {
         int sws = e.details;
         final data = ByteData(2)..setUint16(0, sws);
@@ -33,3 +36,5 @@ class YubikitFlutterSmartCard extends SmartCardInterface {
     }
   }
 }
+
+class TagLostException implements Exception {}

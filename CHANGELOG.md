@@ -1,3 +1,8 @@
+## 0.0.28
+
+* Fix a bug when running a single command.
+* Detect NFC tag removal.
+
 ## 0.0.27
 
 * Update yubikit_openpgp version.

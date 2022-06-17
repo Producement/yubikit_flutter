@@ -60,13 +60,12 @@ class SmartCardAction : SmartCardConnectionAction() {
                 )
                 Log.d(TAG, "Result from verify: ${result.toHex()}")
             }
-            if (commands.size == 1) {
-                val command = commands.first()
+            result(commands.map { command ->
                 Log.d(
                     TAG,
                     "Executing command ${command.toHex()} on application ${application.toHex()}"
                 )
-                result(
+                try {
                     protocol.sendAndReceive(
                         Apdu(
                             command[0].toInt(),
@@ -76,32 +75,14 @@ class SmartCardAction : SmartCardConnectionAction() {
                             command.drop(5).toByteArray()
                         )
                     )
-                )
-            } else {
-                result(commands.map { command ->
-                    Log.d(
-                        TAG,
-                        "Executing command ${command.toHex()} on application ${application.toHex()}"
-                    )
-                    try {
-                        protocol.sendAndReceive(
-                            Apdu(
-                                command[0].toInt(),
-                                command[1].toInt(),
-                                command[2].toInt(),
-                                command[3].toInt(),
-                                command.drop(5).toByteArray()
-                            )
-                        )
-                    } catch (e: ApduException) {
-                        val buffer = ByteBuffer.allocate(2)
-                        buffer.putShort(e.sw)
-                        buffer.array()
-                    }
-
+                } catch (e: ApduException) {
+                    val buffer = ByteBuffer.allocate(2)
+                    buffer.putShort(e.sw)
+                    buffer.array()
                 }
-                )
+
             }
+            )
         }
     }
 
