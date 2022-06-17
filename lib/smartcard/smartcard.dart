@@ -26,7 +26,11 @@ class YubikitFlutterSmartCard extends SmartCardInterface {
       if (e.message == 'Tag was lost.' || e.message == 'Tag connection lost') {
         throw TagLostException();
       }
-      if (e.code == 'yubikit.smartcard.error') {
+      if (e.message == 'Session invalidated by user' ||
+          e.message == 'User canceled') {
+        throw UserCanceledException();
+      }
+      if (e.code == 'yubikit.smartcad.error') {
         int sws = e.details;
         final data = ByteData(2)..setUint16(0, sws);
         throw SmartCardException(data.getUint8(0), data.getUint8(1));
@@ -38,3 +42,5 @@ class YubikitFlutterSmartCard extends SmartCardInterface {
 }
 
 class TagLostException implements Exception {}
+
+class UserCanceledException implements Exception {}

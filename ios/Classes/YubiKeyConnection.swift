@@ -11,7 +11,7 @@ class YubiKeyConnection: NSObject {
     
     var accessoryConnection: YKFAccessoryConnection?
     var nfcConnection: YKFNFCConnection?
-    var connectionCallback: ((_ connection: YKFConnectionProtocol) -> Void)?
+    var connectionCallback: ((_ connection: YKFConnectionProtocol?, _ error: Error?) -> Void)?
     let logger = Logger()
     
     override init() {
@@ -21,11 +21,11 @@ class YubiKeyConnection: NSObject {
     }
 
     
-    func connection(completion: @escaping (_ connection: YKFConnectionProtocol) -> Void) {
+    func connection(completion: @escaping (_ connection: YKFConnectionProtocol?, _ error: Error?) -> Void) {
         logger.info("Starting connection callback")
         if let connection = accessoryConnection {
             logger.info("Using accessory connection")
-            completion(connection)
+            completion(connection, nil)
             logger.info("Accessory connection callback completed")
         } else {
             logger.info("Using NFC connection")
@@ -54,11 +54,18 @@ extension YubiKeyConnection: YKFManagerDelegate {
         logger.info("NFC connected")
         nfcConnection = connection
         if let callback = connectionCallback {
-            callback(connection)
+            callback(connection, nil)
             connectionCallback = nil
             logger.info("NFC connection callback completed")
         } else {
             logger.error("No NFC callback!")
+        }
+    }
+    
+    func didFailConnectingNFC(_ error: Error) {
+        logger.error("Failed to connect to NFC")
+        if let callback = connectionCallback {
+            callback(nil, error)
         }
     }
     

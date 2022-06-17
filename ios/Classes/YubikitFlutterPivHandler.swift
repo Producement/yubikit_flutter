@@ -29,7 +29,11 @@ public class YubikitFlutterPivHandler {
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) -> Bool {
         func pivSession(completion: @escaping (_ session: YKFPIVSession)-> Void) {
-            yubiKeyConnection.connection { connection in
+            yubiKeyConnection.connection { connection, error in
+                guard let connection = connection else {
+                    self.handleError(error: error!, result: result)
+                    return
+                }
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")

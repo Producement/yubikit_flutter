@@ -1,3 +1,7 @@
+## 0.0.29
+
+* Detect user cancellation.
+
 ## 0.0.28
 
 * Fix a bug when running a single command.

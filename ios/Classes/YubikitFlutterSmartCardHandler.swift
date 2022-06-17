@@ -94,7 +94,11 @@ public class YubikitFlutterSmartCardHandler {
                 let application: FlutterStandardTypedData = argument(1)
                 let verify = (call.arguments as! Array<Any?>)[2] as? FlutterStandardTypedData
                 self.logger.debug("Received select application command: \(application.data.hexDescription)")
-                yubiKeyConnection.connection { connection in
+                yubiKeyConnection.connection { connection, error in
+                    guard let connection = connection else {
+                        handleError(error: error!)
+                        return
+                    }
                     guard let smartCardInterface = connection.smartCardInterface else {
                         self.logger.error("Smart card interface not present!")
                         sendResult(FlutterError(code: "yubikit.error", message: "Smart card not present", details: nil))
