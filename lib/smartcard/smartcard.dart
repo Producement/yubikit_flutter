@@ -30,7 +30,7 @@ class YubikitFlutterSmartCard extends SmartCardInterface {
           e.message == 'User canceled') {
         throw UserCanceledException();
       }
-      if (e.code == 'yubikit.smartcad.error') {
+      if (e.code == 'yubikit.smartcard.error') {
         int sws = e.details;
         final data = ByteData(2)..setUint16(0, sws);
         throw SmartCardException(data.getUint8(0), data.getUint8(1));

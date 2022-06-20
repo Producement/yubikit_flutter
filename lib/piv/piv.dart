@@ -7,7 +7,9 @@ import 'package:yubikit_flutter/piv/key_type.dart';
 import 'package:yubikit_flutter/piv/management_key_type.dart';
 import 'package:yubikit_flutter/piv/pin_policy.dart';
 import 'package:yubikit_flutter/piv/touch_policy.dart';
+import 'package:yubikit_openpgp/smartcard/exception.dart';
 
+import '../smartcard/smartcard.dart';
 import 'slot.dart';
 
 class YubikitFlutterPiv {
@@ -52,15 +54,32 @@ class YubikitFlutterPiv {
       YKFPIVManagementKeyType managementKeyType,
       Uint8List managementKey,
       String pin) async {
-    return await _channel.invokeMethod('pivGenerateKey', [
-      slot.value,
-      type.value,
-      pinPolicy.value,
-      touchPolicy.value,
-      pin,
-      managementKeyType.value,
-      managementKey
-    ]);
+    try {
+      return await _channel.invokeMethod('pivGenerateKey', [
+        slot.value,
+        type.value,
+        pinPolicy.value,
+        touchPolicy.value,
+        pin,
+        managementKeyType.value,
+        managementKey
+      ]);
+    } on PlatformException catch (e) {
+      if (e.message == 'Tag was lost.' || e.message == 'Tag connection lost') {
+        throw TagLostException();
+      }
+      if (e.message == 'Session invalidated by user' ||
+          e.message == 'User canceled') {
+        throw UserCanceledException();
+      }
+      if (e.code == 'yubikit.smartcard.error') {
+        int sws = e.details;
+        final data = ByteData(2)..setUint16(0, sws);
+        throw SmartCardException(data.getUint8(0), data.getUint8(1));
+      } else {
+        rethrow;
+      }
+    }
   }
 
   Future<Uint8List> signWithKey(YKFPIVSlot slot, YKFPIVKeyType type,

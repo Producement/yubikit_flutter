@@ -13,7 +13,7 @@ import YubiKit
 public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         let pivChannel = FlutterMethodChannel(name: "yubikit_flutter_piv", binaryMessenger: registrar.messenger())
-        let pivHandler = YubikitFlutterPivHandler(yubiKeyConnection: YubiKeyConnection())
+        let pivHandler = YubikitFlutterPivHandler(yubiKeyConnection: YubiKeyConnection.shared)
         registrar.addMethodCallDelegate(pivHandler, channel: pivChannel)
     }
     
@@ -24,27 +24,33 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
         self.yubiKeyConnection = yubiKeyConnection
     }
     
-    func handleError(error: Error?, result: @escaping FlutterResult) {
-        logger.error("Error! Reason: \(error!.localizedDescription)")
-        if let scError = error as? YKFSessionError {
-            result(FlutterError(code: "yubikit.smartcard.error", message: "\(scError.localizedDescription)", details: scError.code))
-        } else {
-            result(FlutterError(code: "yubikit.error", message: "\(error!.localizedDescription)", details: nil))
-        }
-    }
-    
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        @Sendable func sendResult(_ res: Any?) {
+            yubiKeyConnection.stop()
+            result(res)
+        }
+        
+        @Sendable func handleError(_ error: Error?) {
+            if let scError = error as? YKFSessionError {
+                logger.error("Error! Reason: \(scError.localizedDescription)")
+                sendResult(FlutterError(code: "yubikit.smartcard.error", message: "\(scError.localizedDescription)", details: scError.code))
+            } else {
+                logger.error("Error! Reason: \(error!.localizedDescription)")
+                sendResult(FlutterError(code: "yubikit.error", message: "\(error!.localizedDescription)", details: nil))
+            }
+        }
+        
         func pivSession(completion: @escaping (_ session: YKFPIVSession) -> Void) {
             yubiKeyConnection.connection { connection, error in
                 guard let connection = connection else {
-                    self.handleError(error: error!, result: result)
+                    handleError(error)
                     return
                 }
                 self.logger.info("Connection set up: \(connection.debugDescription!)")
                 connection.pivSession { session, error in
                     self.logger.info("PIV session set up: \(session.debugDescription)")
                     guard let session = session else {
-                        self.handleError(error: error, result: result)
+                        handleError(error)
                         return
                     }
                     completion(session)
@@ -57,7 +63,7 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                 session.verifyPin(pin) { code, error in
                     if error != nil {
                         self.logger.info("PIN verification error: \(error.debugDescription)")
-                        result(FlutterError(code: "pin.error", message: "\(error!.localizedDescription)", details: ""))
+                        handleError(error)
                         return
                     }
                     self.logger.info("PIN verification successful. Remaining attempts: \(code)")
@@ -72,7 +78,7 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                 session.authenticate(withManagementKey: managementKey.data, type: pivManagementKey) { error in
                     if error != nil {
                         self.logger.info("Authentication error: \(error.debugDescription)")
-                        result(FlutterError(code: "authentication.error", message: "\(error!.localizedDescription)", details: ""))
+                        handleError(error)
                         return
                     }
                     completion(session)
@@ -90,10 +96,10 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                     session.getSerialNumber { serialNumber, error in
                         if error != nil {
                             self.logger.info("Serial number error: \(error.debugDescription)")
-                            result(FlutterError(code: "serialnumber.error", message: "\(error!.localizedDescription)", details: ""))
+                            handleError(error)
                             return
                         }
-                        result(serialNumber)
+                        sendResult(serialNumber)
                     }
                 }
             case "pivReset":
@@ -101,10 +107,10 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                     session.reset { error in
                         if error != nil {
                             self.logger.info("Reset error: \(error.debugDescription)")
-                            result(FlutterError(code: "reset.error", message: "\(error!.localizedDescription)", details: ""))
+                            handleError(error)
                             return
                         }
-                        result(nil)
+                        sendResult(nil)
                     }
                 }
             case "pivSetPin":
@@ -114,10 +120,10 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                     session.setPin(pin, oldPin: oldPin, completion: { error in
                         if error != nil {
                             self.logger.info("Change PIN error: \(error.debugDescription)")
-                            result(FlutterError(code: "pin.error", message: "\(error!.localizedDescription)", details: ""))
+                            handleError(error)
                             return
                         }
-                        result(nil)
+                        sendResult(nil)
                     })
                 }
             case "pivSetPuk":
@@ -127,10 +133,10 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                     session.setPuk(puk, oldPuk: oldPuk, completion: { error in
                         if error != nil {
                             self.logger.info("Change PUK error: \(error.debugDescription)")
-                            result(FlutterError(code: "puk.error", message: "\(error!.localizedDescription)", details: ""))
+                            handleError(error)
                             return
                         }
-                        result(nil)
+                        sendResult(nil)
                     })
                 }
             case "pivGenerateKey":
@@ -149,12 +155,12 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                     session.generateKey(in: pivSlot, type: pivKeyType, pinPolicy: pivPinPolicy, touchPolicy: pivTouchPolicy, completion: { key, error in
                         guard let key = key else {
                             self.logger.error("Key error! Reason: \(error!.localizedDescription)")
-                            result(FlutterError(code: "key.error", message: "\(error!.localizedDescription)", details: ""))
+                            handleError(error)
                             return
                         }
                         self.logger.info("Key generated")
                         let publicKey = SecKeyCopyPublicKey(key)!
-                        result(SecKeyCopyExternalRepresentation(publicKey, nil))
+                        sendResult(SecKeyCopyExternalRepresentation(publicKey, nil))
                     })
                 }
             case "pivSignWithKey":
@@ -174,18 +180,18 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                         }
                     }()
                     guard let pivAlgorithm = pivAlgorithm else {
-                        result(FlutterError(code: "unsupported.algorithm.error", message: "Unsupported algorithm: \(algorithm)", details: ""))
+                        sendResult(FlutterError(code: "unsupported.algorithm.error", message: "Unsupported algorithm: \(algorithm)", details: ""))
                         return
                     }
                     self.logger.debug("Signing message: \(message.debugDescription) with key in slot: \(pivSlot.rawValue)")
                     session.signWithKey(in: pivSlot, type: pivKeyType, algorithm: pivAlgorithm, message: message.data) { signature, error in
                         guard let signature = signature else {
                             self.logger.error("Failed to sign message: \(error!.localizedDescription)")
-                            result(FlutterError(code: "sign.error", message: "\(error!.localizedDescription)", details: ""))
+                            handleError(error)
                             return
                         }
                         self.logger.info("Signature generated")
-                        result(signature)
+                        sendResult(signature)
                     }
                 }
             case "pivDecryptWithKey":
@@ -203,16 +209,16 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                         }
                     }()
                     guard let pivAlgorithm = pivAlgorithm else {
-                        result(FlutterError(code: "unsupported.algorithm.error", message: "Unsupported algorithm: \(algorithm)", details: ""))
+                        sendResult(FlutterError(code: "unsupported.algorithm.error", message: "Unsupported algorithm: \(algorithm)", details: ""))
                         return
                     }
                     session.decryptWithKey(in: pivSlot, algorithm: pivAlgorithm, encrypted: message.data) { data, error in
                         guard let data = data else {
                             self.logger.error("Failed to decrypt message: \(error!.localizedDescription)")
-                            result(FlutterError(code: "decrypt.error", message: "\(error!.localizedDescription)", details: ""))
+                            handleError(error)
                             return
                         }
-                        result(data)
+                        sendResult(data)
                     }
                 }
             case "pivCalculateSecretKey":
@@ -226,16 +232,16 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                     let key = SecKeyCreateWithData(publicKey.data as CFData, attributes, &error)
                     guard let key = key else {
                         self.logger.info("Key creation error: \(error.debugDescription)")
-                        result(FlutterError(code: "key.error", message: "\(error.debugDescription)", details: ""))
+                        handleError(error?.takeRetainedValue())
                         return
                     }
                     session.calculateSecretKey(in: pivSlot, peerPublicKey: key) { data, error in
                         guard let data = data else {
                             self.logger.error("Failed to calculate secret key: \(error!.localizedDescription)")
-                            result(FlutterError(code: "key.create.error", message: "\(error!.localizedDescription)", details: ""))
+                            handleError(error)
                             return
                         }
-                        result(data)
+                        sendResult(data)
                     }
                 }
             case "pivGetCertificate":
@@ -246,11 +252,11 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                     session.getCertificateIn(pivSlot) { certificate, error in
                         guard let certificate = certificate else {
                             self.logger.error("Failed to get certificate: \(error!.localizedDescription)")
-                            result(FlutterError(code: "certificate.get.error", message: "\(error!.localizedDescription)", details: ""))
+                            handleError(error)
                             return
                         }
                         let data = SecCertificateCopyData(certificate)
-                        result(data)
+                        sendResult(data)
                     }
                 }
             case "pivPutCertificate":
@@ -265,10 +271,10 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                     session.putCertificate(pivCertificate, inSlot: pivSlot, completion: { error in
                         if error != nil {
                             self.logger.info("Failed to put certificate: \(error.debugDescription)")
-                            result(FlutterError(code: "certificate.put.error", message: "\(error!.localizedDescription)", details: ""))
+                            handleError(error)
                             return
                         }
-                        result(nil)
+                        sendResult(nil)
                     })
                 }
             case "pivEncryptWithKey":
@@ -282,16 +288,14 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                 } else if pivKeyType == YKFPIVKeyType.ECCP256 || pivKeyType == YKFPIVKeyType.ECCP384 {
                     attrKeyType = kSecAttrKeyTypeEC
                 } else {
-                    logger.info("Unknown key type: \(pivKeyType.rawValue)")
-                    result(FlutterError(code: "key.type.error", message: "Unknown key type: \(pivKeyType.rawValue)", details: ""))
+                    handleError(NSError(domain: "encryption", code: 1, userInfo: [NSLocalizedDescriptionKey: "Unknown key type: \(pivKeyType.rawValue)"]))
                     return
                 }
                 let attributes = [kSecAttrKeyType: attrKeyType, kSecAttrKeyClass: kSecAttrKeyClassPublic] as CFDictionary
                 var error: Unmanaged<CFError>?
                 let key = SecKeyCreateWithData(publicKey.data as CFData, attributes, &error)
                 guard let key = key else {
-                    logger.info("Key creation error: \(error.debugDescription)")
-                    result(FlutterError(code: "key.error", message: "\(error.debugDescription)", details: ""))
+                    handleError(NSError(domain: "encryption", code: 2, userInfo: [NSLocalizedDescriptionKey: "Key creation error: \(error.debugDescription)"]))
                     return
                 }
                 let keySize = SecKeyGetBlockSize(key)
@@ -301,9 +305,9 @@ public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
                     let bytes = unsafeBytes.bindMemory(to: UInt8.self).baseAddress!
                     SecKeyEncrypt(key, SecPadding.PKCS1, bytes, Int(message.elementCount), &encryptedBytes, &outputSize)
                 }
-                result(Data(encryptedBytes))
+                sendResult(Data(encryptedBytes))
             default:
-                result(FlutterMethodNotImplemented)
+                sendResult(FlutterMethodNotImplemented)
         }
     }
 }

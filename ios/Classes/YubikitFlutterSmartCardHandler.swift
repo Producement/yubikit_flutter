@@ -13,7 +13,7 @@ import YubiKit
 public class YubikitFlutterSmartCardHandler: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         let smartCardChannel = FlutterMethodChannel(name: "yubikit_flutter_sc", binaryMessenger: registrar.messenger())
-        let smartCardHandler = YubikitFlutterSmartCardHandler(yubiKeyConnection: YubiKeyConnection())
+        let smartCardHandler = YubikitFlutterSmartCardHandler(yubiKeyConnection: YubiKeyConnection.shared)
         registrar.addMethodCallDelegate(smartCardHandler, channel: smartCardChannel)
     }
     

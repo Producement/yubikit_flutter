@@ -12,8 +12,9 @@ class YubiKeyConnection: NSObject {
     var accessoryConnection: YKFAccessoryConnection?
     var nfcConnection: YKFNFCConnection?
     var connectionCallback: ((_ connection: YKFConnectionProtocol?, _ error: Error?) -> Void)?
+    static let shared = YubiKeyConnection()
     
-    override init() {
+    override private init() {
         super.init()
         YubiKitManager.shared.delegate = self
         start()
