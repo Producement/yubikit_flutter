@@ -4,11 +4,10 @@
 //
 //  Created by Maido Kaara on 18.04.2022.
 //
-import YubiKit
 import OSLog
+import YubiKit
 
 class YubiKeyConnection: NSObject {
-    
     var accessoryConnection: YKFAccessoryConnection?
     var nfcConnection: YKFNFCConnection?
     var connectionCallback: ((_ connection: YKFConnectionProtocol?, _ error: Error?) -> Void)?
@@ -20,7 +19,6 @@ class YubiKeyConnection: NSObject {
         start()
     }
 
-    
     func connection(completion: @escaping (_ connection: YKFConnectionProtocol?, _ error: Error?) -> Void) {
         logger.info("Starting connection callback")
         if let connection = accessoryConnection {

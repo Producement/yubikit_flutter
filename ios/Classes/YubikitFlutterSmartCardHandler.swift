@@ -18,9 +18,8 @@ public class YubikitFlutterSmartCardHandler {
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) -> Bool {
-        
         func argument<T>(_ index: Int) -> T {
-            return (call.arguments as! Array<Any>)[index] as! T
+            return (call.arguments as! [Any])[index] as! T
         }
         
         @Sendable func sendResult(_ res: Any) {
@@ -29,23 +28,23 @@ public class YubikitFlutterSmartCardHandler {
         }
         
         @Sendable func runCommands(smartCardInterface: YKFSmartCardInterface, commands: NSArray, verify: Data?) async throws {
-            if(!(verify?.isEmpty ?? true)) {
+            if !(verify?.isEmpty ?? true) {
                 do {
-                let _: Data = try await withCheckedThrowingContinuation { continuation in
+                    let _: Data = try await withCheckedThrowingContinuation { continuation in
                         smartCardInterface.executeCommand(YKFAPDU(data: verify!)!, completion: { verifyData, error in
                             if verifyData != nil {
                                 continuation.resume(returning: verifyData!)
                             } else {
                                 continuation.resume(throwing: error!)
                             }
-                        });
+                        })
                     }
                 } catch {
                     handleError(error: error)
                     return
                 }
             }
-            var results: [Data]  = []
+            var results: [Data] = []
             for command in commands {
                 do {
                     if let cmd = command as? FlutterStandardTypedData {
@@ -87,13 +86,12 @@ public class YubikitFlutterSmartCardHandler {
             }
         }
     
-        
-        switch(call.method) {
+        switch call.method {
             case "sendCommands":
                 let commands: NSArray = argument(0)
                 let application: FlutterStandardTypedData = argument(1)
-                let verify = (call.arguments as! Array<Any?>)[2] as? FlutterStandardTypedData
-                self.logger.debug("Received select application command: \(application.data.hexDescription)")
+                let verify = (call.arguments as! [Any?])[2] as? FlutterStandardTypedData
+                logger.debug("Received select application command: \(application.data.hexDescription)")
                 yubiKeyConnection.connection { connection, error in
                     guard let connection = connection else {
                         handleError(error: error!)
@@ -104,26 +102,26 @@ public class YubikitFlutterSmartCardHandler {
                         sendResult(FlutterError(code: "yubikit.error", message: "Smart card not present", details: nil))
                         return
                     }
-                    guard let applicationApdu = YKFSelectApplicationAPDU(cla: 0x00, ins: 0xA4, p1: 0x04, p2: 0x00, data: application.data, type: .short) else {
+                    guard let applicationApdu = YKFSelectApplicationAPDU(cla: 0x00, ins: 0xa4, p1: 0x04, p2: 0x00, data: application.data, type: .short) else {
                         self.logger.error("Failed to construct application APDU")
                         sendResult(FlutterError(code: "yubikit.error", message: "Application APDU invalid", details: nil))
                         return
                     }
-                    smartCardInterface.selectApplication(applicationApdu) { data, error in
+                    smartCardInterface.selectApplication(applicationApdu) { _, error in
                         if error != nil {
                             self.logger.error("Failed to select application, trying to activate: \(error!.localizedDescription)")
-                            guard let activateApdu = YKFAPDU(cla: 0x00, ins: 0x44, p1: 0x00, p2: 0x00, data:Data(), type: .short) else {
+                            guard let activateApdu = YKFAPDU(cla: 0x00, ins: 0x44, p1: 0x00, p2: 0x00, data: Data(), type: .short) else {
                                 self.logger.error("Failed to construct activate APDU")
                                 sendResult(FlutterError(code: "yubikit.error", message: "Activate APDU invalid", details: ""))
                                 return
                             }
-                            smartCardInterface.executeCommand(activateApdu, completion: { data, error in
+                            smartCardInterface.executeCommand(activateApdu, completion: { _, error in
                                 if error != nil {
                                     handleError(error: error)
                                     return
                                 }
                                 self.logger.info("Smart card activation executed")
-                                smartCardInterface.selectApplication(applicationApdu) { data, error in
+                                smartCardInterface.selectApplication(applicationApdu) { _, error in
                                     if error != nil {
                                         handleError(error: error)
                                         return
@@ -138,7 +136,6 @@ public class YubikitFlutterSmartCardHandler {
                                 try await runCommands(smartCardInterface: smartCardInterface, commands: commands, verify: verify?.data)
                             }
                         }
-                        
                     }
                 }
             default:
@@ -150,12 +147,12 @@ public class YubikitFlutterSmartCardHandler {
 
 private extension Data {
     var hexDescription: String {
-        return reduce("") {$0 + String(format: "%02x", $1)}
+        return reduce("") { $0 + String(format: "%02x", $1) }
     }
     
     var bytes: [UInt8] {
-        var byteArray = [UInt8](repeating: 0, count: self.count)
-        self.copyBytes(to: &byteArray, count: self.count)
+        var byteArray = [UInt8](repeating: 0, count: count)
+        copyBytes(to: &byteArray, count: count)
         return byteArray
     }
 }
