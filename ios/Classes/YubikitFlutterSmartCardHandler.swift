@@ -5,11 +5,18 @@
 //  Created by Maido Kaara on 06.05.2022.
 //
 
+import Flutter
 import Foundation
 import OSLog
 import YubiKit
 
-public class YubikitFlutterSmartCardHandler {
+public class YubikitFlutterSmartCardHandler: NSObject, FlutterPlugin {
+    public static func register(with registrar: FlutterPluginRegistrar) {
+        let smartCardChannel = FlutterMethodChannel(name: "yubikit_flutter_sc", binaryMessenger: registrar.messenger())
+        let smartCardHandler = YubikitFlutterSmartCardHandler(yubiKeyConnection: YubiKeyConnection())
+        registrar.addMethodCallDelegate(smartCardHandler, channel: smartCardChannel)
+    }
+    
     let logger = Logger()
     let yubiKeyConnection: YubiKeyConnection
     
@@ -17,7 +24,7 @@ public class YubikitFlutterSmartCardHandler {
         self.yubiKeyConnection = yubiKeyConnection
     }
     
-    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) -> Bool {
+    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         func argument<T>(_ index: Int) -> T {
             return (call.arguments as! [Any])[index] as! T
         }
@@ -139,20 +146,7 @@ public class YubikitFlutterSmartCardHandler {
                     }
                 }
             default:
-                return false
+                result(FlutterMethodNotImplemented)
         }
-        return true
-    }
-}
-
-private extension Data {
-    var hexDescription: String {
-        return reduce("") { $0 + String(format: "%02x", $1) }
-    }
-    
-    var bytes: [UInt8] {
-        var byteArray = [UInt8](repeating: 0, count: count)
-        copyBytes(to: &byteArray, count: count)
-        return byteArray
     }
 }

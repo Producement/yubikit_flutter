@@ -8,10 +8,10 @@ import OSLog
 import YubiKit
 
 class YubiKeyConnection: NSObject {
+    let logger = Logger()
     var accessoryConnection: YKFAccessoryConnection?
     var nfcConnection: YKFNFCConnection?
     var connectionCallback: ((_ connection: YKFConnectionProtocol?, _ error: Error?) -> Void)?
-    let logger = Logger()
     
     override init() {
         super.init()

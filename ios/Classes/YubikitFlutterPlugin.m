@@ -10,6 +10,7 @@
 
 @implementation YubikitFlutterPlugin
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
-  [SwiftYubikitFlutterPlugin registerWithRegistrar:registrar];
+  [YubikitFlutterPivHandler registerWithRegistrar:registrar];
+  [YubikitFlutterSmartCardHandler registerWithRegistrar:registrar];
 }
 @end

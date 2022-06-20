@@ -5,11 +5,18 @@
 //  Created by Maido Kaara on 06.05.2022.
 //
 
+import Flutter
 import Foundation
 import OSLog
 import YubiKit
 
-public class YubikitFlutterPivHandler {
+public class YubikitFlutterPivHandler: NSObject, FlutterPlugin {
+    public static func register(with registrar: FlutterPluginRegistrar) {
+        let pivChannel = FlutterMethodChannel(name: "yubikit_flutter_piv", binaryMessenger: registrar.messenger())
+        let pivHandler = YubikitFlutterPivHandler(yubiKeyConnection: YubiKeyConnection())
+        registrar.addMethodCallDelegate(pivHandler, channel: pivChannel)
+    }
+    
     let logger = Logger()
     let yubiKeyConnection: YubiKeyConnection
     
@@ -26,7 +33,7 @@ public class YubikitFlutterPivHandler {
         }
     }
     
-    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) -> Bool {
+    public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         func pivSession(completion: @escaping (_ session: YKFPIVSession) -> Void) {
             yubiKeyConnection.connection { connection, error in
                 guard let connection = connection else {
@@ -277,7 +284,7 @@ public class YubikitFlutterPivHandler {
                 } else {
                     logger.info("Unknown key type: \(pivKeyType.rawValue)")
                     result(FlutterError(code: "key.type.error", message: "Unknown key type: \(pivKeyType.rawValue)", details: ""))
-                    return true
+                    return
                 }
                 let attributes = [kSecAttrKeyType: attrKeyType, kSecAttrKeyClass: kSecAttrKeyClassPublic] as CFDictionary
                 var error: Unmanaged<CFError>?
@@ -285,7 +292,7 @@ public class YubikitFlutterPivHandler {
                 guard let key = key else {
                     logger.info("Key creation error: \(error.debugDescription)")
                     result(FlutterError(code: "key.error", message: "\(error.debugDescription)", details: ""))
-                    return true
+                    return
                 }
                 let keySize = SecKeyGetBlockSize(key)
                 var encryptedBytes = [UInt8](repeating: 0, count: keySize)
@@ -296,8 +303,7 @@ public class YubikitFlutterPivHandler {
                 }
                 result(Data(encryptedBytes))
             default:
-                return false
+                result(FlutterMethodNotImplemented)
         }
-        return true
     }
 }
