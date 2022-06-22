@@ -47,38 +47,16 @@ class SmartCardAction : SmartCardConnectionAction() {
 
 
             selectApplication(protocol, application)
-            if (verifyCommand != null && verifyCommand.isNotEmpty()) {
-                Log.d(TAG, "Executing verify command ${verifyCommand.toHex()}")
-                val result = protocol.sendAndReceive(
-                    Apdu(
-                        verifyCommand[0].toInt(),
-                        verifyCommand[1].toInt(),
-                        verifyCommand[2].toInt(),
-                        verifyCommand[3].toInt(),
-                        verifyCommand.drop(5).toByteArray()
-                    )
-                )
-                Log.d(TAG, "Result from verify: ${result.toHex()}")
-            }
+            verifyPin(verifyCommand, protocol)
             result(commands.map { command ->
                 Log.d(
                     TAG,
                     "Executing command ${command.toHex()} on application ${application.toHex()}"
                 )
                 try {
-                    protocol.sendAndReceive(
-                        Apdu(
-                            command[0].toInt(),
-                            command[1].toInt(),
-                            command[2].toInt(),
-                            command[3].toInt(),
-                            command.drop(5).toByteArray()
-                        )
-                    )
+                    sendCommand(protocol, command)
                 } catch (e: ApduException) {
-                    val buffer = ByteBuffer.allocate(2)
-                    buffer.putShort(e.sw)
-                    buffer.array()
+                    shortToBytes(e.sw)
                 }
 
             }
@@ -86,31 +64,5 @@ class SmartCardAction : SmartCardConnectionAction() {
         }
     }
 
-    private fun selectApplication(
-        protocol: SmartCardProtocol,
-        application: ByteArray
-    ) {
-        try {
-            protocol.select(application)
-        } catch (e: IOException) {
-            val cause = e.cause
-            if (cause is ApduException && isTerminated(cause)) {
-                activateCardAndResume(protocol, application)
-            } else {
-                Log.w(TAG, e.message.toString(), e)
-            }
-        }
-    }
 
-    private fun isTerminated(e: ApduException) =
-        e.sw == SW.CONDITIONS_NOT_SATISFIED || e.sw == SW.NO_INPUT_DATA
-
-    private fun activateCardAndResume(
-        protocol: SmartCardProtocol,
-        application: ByteArray
-    ) {
-        val activateFileCommand = Apdu(0, 0x44, 0, 0, null)
-        protocol.sendAndReceive(activateFileCommand)
-        protocol.select(application)
-    }
 }

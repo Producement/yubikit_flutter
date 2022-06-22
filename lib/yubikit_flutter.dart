@@ -1,3 +1,4 @@
+import 'package:yubikit_flutter/pgp/batch.dart';
 import 'package:yubikit_openpgp/yubikit_openpgp.dart';
 
 import 'piv/piv.dart';
@@ -13,6 +14,7 @@ export 'piv/piv.dart';
 export 'piv/slot.dart';
 export 'piv/touch_policy.dart';
 export 'smartcard/smartcard.dart';
+export 'pgp/batch.dart';
 
 class YubikitFlutter {
   const YubikitFlutter._internal();
@@ -27,6 +29,11 @@ class YubikitFlutter {
 
   static YubikitOpenPGP openPGP({PinProvider? pinProvider}) {
     return YubikitOpenPGP(
+        const YubikitFlutterSmartCard(), pinProvider ?? PinProvider());
+  }
+
+  static YubikitOpenPGPBatch openPGPBatch({PinProvider? pinProvider}) {
+    return YubikitOpenPGPBatch(const YubikitOpenPGPCommands(),
         const YubikitFlutterSmartCard(), pinProvider ?? PinProvider());
   }
 }

@@ -12,5 +12,6 @@
 + (void)registerWithRegistrar:(NSObject<FlutterPluginRegistrar>*)registrar {
   [YubikitFlutterPivHandler registerWithRegistrar:registrar];
   [YubikitFlutterSmartCardHandler registerWithRegistrar:registrar];
+  [YubikitFlutterOpenPGPHandler registerWithRegistrar:registrar];
 }
 @end

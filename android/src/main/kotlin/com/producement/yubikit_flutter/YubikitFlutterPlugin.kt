@@ -20,8 +20,10 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
     ResultHandler {
     private lateinit var pivChannel: MethodChannel
     private lateinit var smartCardChannel: MethodChannel
+    private lateinit var openPGPChannel: MethodChannel
     private lateinit var smartCardMethodHandler: YubikitSmartCardMethodCallHandler
     private lateinit var pivMethodHandler: YubikitPivMethodCallHandler
+    private lateinit var openPGPMethodCallHandler: YubikitOpenPGPMethodCallHandler
     private lateinit var activityPluginBinding: ActivityPluginBinding
     private var responseData: MutableLiveData<Result<*>>? = null
 
@@ -38,6 +40,8 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
         const val SECRET_KEY_REQUEST = 9
         const val SERIAL_NUMBER_REQUEST = 10
         const val SMART_CARD_REQUEST = 11
+        const val GENERATE_EC_ASYM_KEY = 12
+        const val GENERATE_RSA_ASYM_KEY = 13
     }
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
@@ -51,6 +55,11 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
         smartCardMethodHandler =
             YubikitSmartCardMethodCallHandler(flutterPluginBinding.applicationContext, this)
         smartCardChannel.setMethodCallHandler(smartCardMethodHandler)
+
+        openPGPChannel = MethodChannel(flutterPluginBinding.binaryMessenger, "yubikit_flutter_pgp")
+        openPGPMethodCallHandler =
+            YubikitOpenPGPMethodCallHandler(flutterPluginBinding.applicationContext, this)
+        openPGPChannel.setMethodCallHandler(openPGPMethodCallHandler)
     }
 
 
@@ -58,12 +67,14 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
         Log.d(TAG, "Detached from engine")
         pivChannel.setMethodCallHandler(null)
         smartCardChannel.setMethodCallHandler(null)
+        openPGPChannel.setMethodCallHandler(null)
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         Log.d(TAG, "Attached to activity")
         pivMethodHandler.onAttachedToActivity(binding)
         smartCardMethodHandler.onAttachedToActivity(binding)
+        openPGPMethodCallHandler.onAttachedToActivity(binding)
         this.activityPluginBinding = binding
         binding.addActivityResultListener(this)
     }
@@ -72,6 +83,7 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
         Log.d(TAG, "Detached from activity for config changes")
         pivMethodHandler.onDetachedFromActivityForConfigChanges()
         smartCardMethodHandler.onDetachedFromActivityForConfigChanges()
+        openPGPMethodCallHandler.onDetachedFromActivityForConfigChanges()
         activityPluginBinding.removeActivityResultListener(this)
     }
 
@@ -79,6 +91,7 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
         Log.d(TAG, "Reattached to activity")
         pivMethodHandler.onReattachedToActivityForConfigChanges(binding)
         smartCardMethodHandler.onReattachedToActivityForConfigChanges(binding)
+        openPGPMethodCallHandler.onReattachedToActivityForConfigChanges(binding)
         binding.addActivityResultListener(this)
         this.activityPluginBinding = binding
     }
@@ -87,6 +100,7 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
         Log.d(TAG, "Detached from activity")
         smartCardMethodHandler.onDetachedFromActivity()
         pivMethodHandler.onDetachedFromActivity()
+        openPGPMethodCallHandler.onDetachedFromActivity()
         activityPluginBinding.removeActivityResultListener(this)
     }
 
@@ -116,7 +130,7 @@ class YubikitFlutterPlugin : FlutterPlugin, ActivityAware, PluginRegistry.Activi
                             data.getByteArrayExtra("SC_RESULT")
                         )
                     )
-                    SMART_CARD_REQUEST -> responseData.postValue(
+                    SMART_CARD_REQUEST, GENERATE_EC_ASYM_KEY, GENERATE_RSA_ASYM_KEY -> responseData.postValue(
                         Result.success(
                             data.getSerializableExtra("SC_RESULTS")
                         )
