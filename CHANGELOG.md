@@ -1,3 +1,7 @@
+## 0.0.30
+
+* Batch generation of OpenPGP keys.
+
 ## 0.0.29
 
 * Detect user cancellation.

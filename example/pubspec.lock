@@ -218,7 +218,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "0.0.29"
+    version: "0.0.30"
   yubikit_openpgp:
     dependency: "direct main"
     description:

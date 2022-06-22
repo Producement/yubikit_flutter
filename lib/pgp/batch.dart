@@ -7,9 +7,30 @@ import 'package:yubikit_flutter/yubikit_flutter.dart';
 class YubikitOpenPGPBatch {
   static const MethodChannel _channel = MethodChannel('yubikit_flutter_pgp');
   final YubikitOpenPGPCommands _commands;
+  final SmartCardInterface _smartCardInterface;
   final PinProvider _pinProvider;
 
-  const YubikitOpenPGPBatch(this._commands, this._pinProvider);
+  const YubikitOpenPGPBatch(
+      this._commands, this._smartCardInterface, this._pinProvider);
+
+  Future<Map<KeySlot, KeyData?>> getKeys(List<KeySlot> keySlots) async {
+    final commands = keySlots
+        .map((keySlot) => _commands.getAsymmetricPublicKey(keySlot))
+        .toList();
+    final results =
+        await _smartCardInterface.sendCommands(Application.openpgp, commands);
+    final result = await results.toList();
+    final entries = keySlots.mapIndexed((i, slot) => _entry(slot, result[i]));
+    return Map.fromEntries(entries);
+  }
+
+  MapEntry<KeySlot, KeyData?> _entry(
+      KeySlot keySlot, SmartCardResponse response) {
+    if (response is SuccessfulResponse) {
+      return MapEntry(keySlot, KeyData.fromBytes(response.response, keySlot));
+    }
+    return MapEntry(keySlot, null);
+  }
 
   Future<Map<KeySlot, ECKeyData>> generateECKeys(
       Map<KeySlot, ECCurve> slots) async {
