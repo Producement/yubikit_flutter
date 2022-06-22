@@ -1,5 +1,6 @@
 import 'package:convert/convert.dart';
 import 'package:flutter/material.dart';
+import 'package:yubikit_flutter/pgp/batch_interface.dart';
 import 'package:yubikit_flutter/yubikit_flutter.dart';
 import 'package:yubikit_flutter_example/batch_service.dart';
 
@@ -57,13 +58,20 @@ class OpenPGPPage extends StatelessWidget {
               child: const Text("EC sign")),
           ElevatedButton(
               onPressed: () async {
-                await YubikitFlutter.openPGP()
-                    .generateECKey(KeySlot.encryption, ECCurve.x25519)
-                    .then((key) async {
-                  await TextDialog.showTextDialog(context, 'Public key: $key');
+                final batch = YubikitOpenPGPBatch(
+                    const YubikitOpenPGPCommands(), PinProvider());
+                await batch.generateECKeys({
+                  KeySlot.signature: ECCurve.ed25519,
+                  KeySlot.authentication: ECCurve.ed25519,
+                  KeySlot.encryption: ECCurve.x25519
+                }).then((responses) {
+                  responses.forEach((slot, key) async {
+                    await TextDialog.showTextDialog(context,
+                        'Slot: $slot key: ${hex.encode(key.publicKey)}');
+                  });
                 });
               },
-              child: const Text("Generate encryption EC key")),
+              child: const Text("Generate all keys")),
           ElevatedButton(
               onPressed: () async {
                 await YubikitFlutter.openPGP().reset();

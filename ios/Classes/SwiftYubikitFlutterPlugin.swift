@@ -8,5 +8,6 @@ public class SwiftYubikitFlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         YubikitFlutterPivHandler.register(with: registrar)
         YubikitFlutterSmartCardHandler.register(with: registrar)
+        YubikitFlutterOpenPGPHandler.register(with: registrar)
     }
 }
