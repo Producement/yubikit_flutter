@@ -34,12 +34,12 @@ class YubikitOpenPGPBatch {
 
   Future<Map<KeySlot, ECKeyData>> generateECKeys(
       Map<KeySlot, ECCurve> slots) async {
-    final generateResponses = await sendCommands(
+    final generateResponses = await _sendCommands(
         'generateECAsymmetricKey',
         [
-          ecKeyAttributes(slots),
-          generate(slots.keys),
-          ecCurveParams(slots.values)
+          _ecKeyAttributes(slots),
+          _generate(slots.keys),
+          _ecCurveParams(slots.values)
         ],
         [
           slots.keys.map((e) => e.fingerprint).toList(),
@@ -58,7 +58,7 @@ class YubikitOpenPGPBatch {
     }));
   }
 
-  List<List<int>> ecKeyAttributes(Map<KeySlot, ECCurve> ecParams) {
+  List<List<int>> _ecKeyAttributes(Map<KeySlot, ECCurve> ecParams) {
     return ecParams.entries
         .map(
           (entry) => _commands.setECKeyAttributes(entry.key, entry.value),
@@ -66,7 +66,7 @@ class YubikitOpenPGPBatch {
         .toList();
   }
 
-  List<List<int>> ecCurveParams(Iterable<ECCurve> ecCurves) {
+  List<List<int>> _ecCurveParams(Iterable<ECCurve> ecCurves) {
     return ecCurves
         .map(
           (curve) => Uint8List.fromList(
@@ -77,9 +77,9 @@ class YubikitOpenPGPBatch {
 
   Future<Map<KeySlot, RSAKeyData>> generateRSAKey(
       Map<KeySlot, int> rsaParams) async {
-    final generateResponses = await sendCommands(
+    final generateResponses = await _sendCommands(
         'generateRSAAsymmetricKey',
-        [rsaKeyAttributes(rsaParams), generate(rsaParams.keys)],
+        [_rsaKeyAttributes(rsaParams), _generate(rsaParams.keys)],
         [
           rsaParams.keys.map((e) => e.fingerprint).toList(),
           rsaParams.keys.map((e) => e.genTime).toList(),
@@ -97,7 +97,7 @@ class YubikitOpenPGPBatch {
     }));
   }
 
-  List<List<int>> rsaKeyAttributes(Map<KeySlot, int> rsaParams) {
+  List<List<int>> _rsaKeyAttributes(Map<KeySlot, int> rsaParams) {
     return rsaParams.entries
         .map(
           (entry) => _commands.setRsaKeyAttributes(entry.key, entry.value),
@@ -105,7 +105,7 @@ class YubikitOpenPGPBatch {
         .toList();
   }
 
-  List<List<int>> generate(Iterable<KeySlot> params) {
+  List<List<int>> _generate(Iterable<KeySlot> params) {
     return params
         .map(
           (keySlot) => _commands.generateAsymmetricKey(keySlot),
@@ -113,7 +113,7 @@ class YubikitOpenPGPBatch {
         .toList();
   }
 
-  Future<List<SmartCardResponse>> sendCommands(
+  Future<List<SmartCardResponse>> _sendCommands(
       String method, List<List<List<int>>> input, List<List<int>> input2,
       {List<int>? verify}) async {
     try {

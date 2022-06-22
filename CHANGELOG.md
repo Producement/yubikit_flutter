@@ -1,3 +1,7 @@
+## 0.0.31
+
+* Improve batch generation API.
+
 ## 0.0.30
 
 * Batch generation of OpenPGP keys.
