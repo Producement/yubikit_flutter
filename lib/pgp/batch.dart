@@ -75,7 +75,7 @@ class YubikitOpenPGPBatch {
         .toList();
   }
 
-  Future<Map<KeySlot, RSAKeyData>> generateRSAKey(
+  Future<Map<KeySlot, RSAKeyData>> generateRSAKeys(
       Map<KeySlot, int> rsaParams) async {
     final generateResponses = await _sendCommands(
         'generateRSAAsymmetricKey',
