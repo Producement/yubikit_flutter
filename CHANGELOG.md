@@ -1,3 +1,7 @@
+## 0.0.32
+
+* Fix batch API.
+
 ## 0.0.31
 
 * Improve batch generation API.
