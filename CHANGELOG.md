@@ -1,3 +1,7 @@
+## 0.0.33
+
+* Fail gracefully when some features are not present.
+
 ## 0.0.32
 
 * Fix batch API.
