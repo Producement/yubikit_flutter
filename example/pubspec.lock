@@ -218,14 +218,14 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "0.0.30"
+    version: "0.0.33"
   yubikit_openpgp:
     dependency: "direct main"
     description:
       name: yubikit_openpgp
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "1.0.18"
+    version: "1.0.20"
 sdks:
   dart: ">=2.17.0-206.0.dev <3.0.0"
   flutter: ">=2.5.0"

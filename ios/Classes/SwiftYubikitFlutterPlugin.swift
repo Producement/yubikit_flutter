@@ -1,10 +1,6 @@
 import Flutter
-import Foundation
-import OSLog
-import UIKit
-import YubiKit
 
-public class SwiftYubikitFlutterPlugin {
+public class SwiftYubikitFlutterPlugin: NSObject, FlutterPlugin {
     public static func register(with registrar: FlutterPluginRegistrar) {
         YubikitFlutterPivHandler.register(with: registrar)
         YubikitFlutterSmartCardHandler.register(with: registrar)

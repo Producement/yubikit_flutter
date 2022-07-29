@@ -5,6 +5,7 @@
 //  Created by Maido Kaara on 18.04.2022.
 //
 import OSLog
+import Foundation
 import YubiKit
 
 class YubiKeyConnection: NSObject {
@@ -29,14 +30,22 @@ class YubiKeyConnection: NSObject {
         } else {
             logger.info("Using NFC connection")
             connectionCallback = completion
-            YubiKitManager.shared.startNFCConnection()
+            if YubiKitDeviceCapabilities.supportsISO7816NFCTags {
+                YubiKitManager.shared.startNFCConnection()
+            } else {
+                completion(nil, NSError(domain: "nfc", code: 1, userInfo: [NSLocalizedDescriptionKey: "NFC not supported!"]))
+            }
         }
     }
     
     func start() {
         logger.info("Starting accessory connection")
-        YubiKitManager.shared.startAccessoryConnection()
-        Thread.sleep(forTimeInterval: 1.0) // Wait for accessory connection to initialize
+        if YubiKitDeviceCapabilities.supportsMFIAccessoryKey {
+            YubiKitManager.shared.startAccessoryConnection()
+            Thread.sleep(forTimeInterval: 1.0) // Wait for accessory connection to initialize
+        } else {
+            logger.info("Device doesn't support accessory connection!")
+        }
     }
     
     func stop() {
